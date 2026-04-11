@@ -14,7 +14,7 @@
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
             touch-action: manipulation;
-            background-color: #FAF5F9; /* 參考圖片的淡紫粉色背景 */
+            background-color: #FAF5F9; 
         }
 
         .vto-container {
@@ -64,7 +64,6 @@
             border-color: #E950A0;
         }
 
-        /* 進入畫面樣式 */
         #start-screen {
             background-color: #FAF5F9;
             z-index: 100;
@@ -83,7 +82,7 @@
 
     <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl relative">
         
-        <!-- 進入試妝前的歡迎畫面 -->
+        <!-- Welcome screen before trying on makeup -->
         <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center transition-opacity duration-700">
             <h2 class="text-[#E950A0] text-xl font-bold mb-32 tracking-wider">AI Beauty Try-On Plugin</h2>
             
@@ -123,7 +122,7 @@
                 </div>
             </div>
 
-            <!-- 切換標籤 -->
+            <!-- Tab switching -->
             <div class="mt-6">
                 <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-100">
                     <button onclick="changeUIMode('color')" id="tab-color" class="pb-2 active-tab whitespace-nowrap uppercase">色號選購</button>
@@ -217,10 +216,11 @@
                 const landmarks = results.multiFaceLandmarks[0];
                 drawBaseMakeup(landmarks, currentBaseStyle);
                 const eyeColor = currentEyeStyle === 'rose' ? '#A68A8A' : (currentEyeStyle === 'tea' ? '#8C7665' : activeLook.eye);
-                drawNaturalLayer(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], eyeColor, 0.45, 8, 'multiply');
-                drawNaturalLayer(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], eyeColor, 0.45, 8, 'multiply');
-                drawNaturalLayer(landmarks, [70, 63, 105, 66, 107, 55, 65, 52], '#333333', 0.2, 3, 'multiply');
-                drawNaturalLayer(landmarks, [300, 293, 334, 296, 336, 285, 295, 282], '#333333', 0.2, 3, 'multiply');
+                // Increased blur for eye makeup and eyebrows for a more natural edge
+                drawNaturalLayer(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], eyeColor, 0.45, 12, 'multiply');
+                drawNaturalLayer(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], eyeColor, 0.45, 12, 'multiply');
+                drawNaturalLayer(landmarks, [70, 63, 105, 66, 107, 55, 65, 52], '#333333', 0.2, 5, 'multiply');
+                drawNaturalLayer(landmarks, [300, 293, 334, 296, 336, 285, 295, 282], '#333333', 0.2, 5, 'multiply');
                 drawHemeBlush(landmarks, activeLook.blush);
                 drawReshapedLips(landmarks, activeLook.lip);
                 if (showGuides) drawProportionGuides(landmarks);
@@ -228,7 +228,7 @@
             canvasCtx.restore();
         }
 
-        // --- 初始化功能 ---
+        // --- Initialization functions ---
         initBtn.addEventListener('click', () => {
             startScreen.style.opacity = '0';
             appContent.style.opacity = '1';
@@ -250,7 +250,7 @@
             camera.start();
         }
 
-        // --- 繪製函數 ---
+        // --- Drawing functions ---
         function drawBaseMakeup(landmarks, style) {
             if (style === 'natural') return;
             canvasCtx.save();
@@ -281,10 +281,12 @@
                 return p;
             });
             const upper = getPoints(UPPER_LIP), lower = getPoints(LOWER_LIP);
-            drawPath(upper, color, 0.65, 5, 'multiply');
-            drawPath(upper, color, 0.8, 2, 'multiply');
-            drawPath(lower, color, 0.65, 5, 'multiply');
-            drawPath(lower, color, 0.8, 2, 'multiply');
+            
+            // Adjusted alpha to 0.4 (60% transparency) and increased blur for softer edges
+            drawPath(upper, color, 0.4, 8, 'multiply');
+            drawPath(upper, color, 0.4, 4, 'multiply');
+            drawPath(lower, color, 0.4, 8, 'multiply');
+            drawPath(lower, color, 0.4, 4, 'multiply');
         }
 
         function drawPath(points, color, alpha, blur, composite) {
@@ -301,7 +303,8 @@
 
         function drawHemeBlush(landmarks, color) {
             [landmarks[205], landmarks[425]].forEach(pt => {
-                canvasCtx.save(); canvasCtx.globalCompositeOperation = 'multiply'; canvasCtx.globalAlpha = 0.45; canvasCtx.filter = 'blur(18px)'; 
+                canvasCtx.save(); canvasCtx.globalCompositeOperation = 'multiply'; canvasCtx.globalAlpha = 0.45; 
+                canvasCtx.filter = 'blur(25px)'; // Increased blush blur for soft blending
                 const grad = canvasCtx.createRadialGradient(pt.x * canvasElement.width, pt.y * canvasElement.height, 0, pt.x * canvasElement.width, pt.y * canvasElement.height, 50);
                 grad.addColorStop(0, color); grad.addColorStop(1, 'transparent');
                 canvasCtx.fillStyle = grad; canvasCtx.beginPath(); canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 50, 0, Math.PI * 2); canvasCtx.fill();
@@ -315,7 +318,7 @@
             lines.forEach(y => { canvasCtx.beginPath(); canvasCtx.moveTo(canvasElement.width * 0.2, y * canvasElement.height); canvasCtx.lineTo(canvasElement.width * 0.8, y * canvasElement.height); canvasCtx.stroke(); });
         }
 
-        // --- UI 控制 ---
+        // --- UI Control ---
         function changeUIMode(mode) {
             ['color', 'base', 'eye', 'shape'].forEach(m => {
                 document.getElementById(`${m}-panel`).style.display = m === mode ? 'block' : 'none';
@@ -356,7 +359,6 @@
             });
         }
 
-        // 觸控優化
         compareBtn.addEventListener('mousedown', () => showMakeup = false);
         compareBtn.addEventListener('mouseup', () => showMakeup = true);
         compareBtn.addEventListener('touchstart', (e) => { e.preventDefault(); showMakeup = false; });
