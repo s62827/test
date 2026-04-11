@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>heme 虛擬試妝 - 全模組專業版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
@@ -11,25 +11,34 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
         
-        body { font-family: 'Noto Sans TC', sans-serif; }
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            touch-action: manipulation; /* 優化手機點擊 */
+        }
 
         .vto-container {
             aspect-ratio: 3/4;
             position: relative;
             overflow: hidden;
             border-radius: 12px;
-            background: #fdfdfd;
+            background: #000;
         }
+        
+        /* 關鍵：確保 Video 與 Canvas 完美重疊且屬性一致 */
         #video-element, #output-canvas {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            min-width: 100%;
-            min-height: 100%;
-            object-fit: cover;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 確保兩者裁剪方式相同 */
         }
-        .mirror { transform: translate(-50%, -50%) scaleX(-1) !important; }
+
+        /* 手機端建議使用 CSS 翻轉，不要在 JS 裡翻轉座標，避免計算誤差 */
+        .mirror {
+            transform: scaleX(-1);
+        }
+        
         .active-tab { color: #000; font-weight: 700; border-bottom: 2px solid #000; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
@@ -47,6 +56,7 @@
             font-size: 11px;
             transition: all 0.2s;
             text-align: center;
+            background: white;
         }
         .option-btn.active {
             background-color: #000;
@@ -58,21 +68,22 @@
 <body class="bg-[#FBF9F7] text-[#5d5d5d]">
 
     <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-sm">
-        <!-- heme 品牌標題 -->
         <header class="p-5 text-center">
             <h1 class="text-xl font-light tracking-[0.4em] uppercase text-[#333]">heme</h1>
             <div class="h-px w-8 bg-[#ddd] mx-auto mt-2"></div>
-            <p class="text-[9px] text-gray-400 mt-2 tracking-[0.2em] uppercase">Professional Modular Try-on</p>
+            <p class="text-[9px] text-gray-400 mt-2 tracking-[0.2em] uppercase">Mobile Stable Engine v2.0</p>
         </header>
 
         <main class="flex-grow px-6">
-            <div class="vto-container relative border border-gray-50 overflow-hidden shadow-lg">
+            <div class="vto-container relative border border-gray-50 shadow-lg">
                 <div id="loading-overlay" class="absolute inset-0 z-50 bg-[#FBF9F7] flex flex-col items-center justify-center">
                     <div class="w-6 h-6 border border-gray-200 border-t-[#a38b7e] rounded-full animate-spin"></div>
-                    <p class="text-[9px] mt-4 tracking-widest text-gray-400">正在開啟全模組試妝引擎...</p>
+                    <p class="text-[9px] mt-4 tracking-widest text-gray-400">正在優化手機定位...</p>
                 </div>
 
-                <video id="video-element" class="mirror" playsinline></video>
+                <!-- 將 Video 置於底層 -->
+                <video id="video-element" class="mirror" playsinline muted autoplay></video>
+                <!-- Canvas 置於頂層，與 Video 尺寸同步 -->
                 <canvas id="output-canvas" class="mirror"></canvas>
 
                 <div class="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10">
@@ -84,7 +95,6 @@
                 </div>
             </div>
 
-            <!-- 全模組切換標籤 -->
             <div class="mt-6">
                 <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-50">
                     <button onclick="changeUIMode('color')" id="tab-color" class="pb-2 active-tab whitespace-nowrap uppercase">色號</button>
@@ -93,34 +103,27 @@
                     <button onclick="changeUIMode('shape')" id="tab-shape" class="pb-2 whitespace-nowrap uppercase">唇形</button>
                 </div>
 
-                <!-- 內容面板 -->
                 <div class="min-h-[140px]">
-                    <!-- 色號面板 -->
                     <div id="color-panel" class="block">
                         <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="look-selector"></div>
                     </div>
 
-                    <!-- 底妝面板 -->
                     <div id="base-panel" class="hidden">
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="setBaseStyle('natural')" id="base-natural" class="option-btn active uppercase tracking-tighter">輕透原生</button>
                             <button onclick="setBaseStyle('matte')" id="base-matte" class="option-btn uppercase tracking-tighter">極致柔霧</button>
                             <button onclick="setBaseStyle('glow')" id="base-glow" class="option-btn uppercase tracking-tighter">絲絨水光</button>
                         </div>
-                        <p class="text-[9px] text-gray-400 mt-3 italic leading-relaxed">底妝將修正膚色均勻度並保留真實肌膚紋理。</p>
                     </div>
 
-                    <!-- 眼妝面板 -->
                     <div id="eye-panel" class="hidden">
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="setEyeStyle('daily')" id="eye-daily" class="option-btn active uppercase tracking-tighter">日常深邃</button>
                             <button onclick="setEyeStyle('rose')" id="eye-rose" class="option-btn uppercase tracking-tighter">晨曦玫瑰</button>
                             <button onclick="setEyeStyle('tea')" id="eye-tea" class="option-btn uppercase tracking-tighter">烏龍拿鐵</button>
                         </div>
-                        <p class="text-[9px] text-gray-400 mt-3 italic leading-relaxed">針對亞洲眼型調整，增強眼窩陰影與深邃感。</p>
                     </div>
 
-                    <!-- 唇形面板 -->
                     <div id="shape-panel" class="hidden">
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="setLipShape('natural')" id="shape-natural" class="option-btn active uppercase tracking-widest">標準原色</button>
@@ -145,12 +148,8 @@
         const loadingOverlay = document.getElementById('loading-overlay');
         const compareBtn = document.getElementById('compare-btn');
 
-        // 當前選中的模組狀態
-        let currentLipShape = 'natural';
-        let currentBaseStyle = 'natural';
-        let currentEyeStyle = 'daily';
-        let showMakeup = true;
-        let showGuides = false;
+        let currentLipShape = 'natural', currentBaseStyle = 'natural', currentEyeStyle = 'daily';
+        let showMakeup = true, showGuides = false;
         
         const looks = [
             { id: 'ginger', name: '01 柔薑', lip: '#A95842', eye: '#8B6A5A', blush: '#D5A893' },
@@ -163,39 +162,45 @@
         ];
         let activeLook = looks[0];
 
-        // 索引定義
         const LIPS_OUTER = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
         const LIPS_INNER = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
         const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
 
         function onResults(results) {
+            // 隱藏加載層
             if (loadingOverlay.style.opacity !== '0') {
                 loadingOverlay.style.opacity = '0';
                 setTimeout(() => loadingOverlay.style.display = 'none', 500);
             }
 
-            canvasElement.width = videoElement.videoWidth;
-            canvasElement.height = videoElement.videoHeight;
+            // 關鍵：同步解析度，這能防止座標在手機上跑掉
+            if (videoElement.videoWidth > 0) {
+                if (canvasElement.width !== videoElement.videoWidth || canvasElement.height !== videoElement.videoHeight) {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                }
+            }
+
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             
             if (showMakeup && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
                 
-                // 1. 渲染底妝質感
+                // 1. 底妝
                 drawBaseMakeup(landmarks, currentBaseStyle);
 
-                // 2. 渲染眼妝
+                // 2. 眼妝
                 const eyeColor = currentEyeStyle === 'rose' ? '#A68A8A' : (currentEyeStyle === 'tea' ? '#8C7665' : activeLook.eye);
                 drawNaturalLayer(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], eyeColor, 0.45, 8, 'multiply');
                 drawNaturalLayer(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], eyeColor, 0.45, 8, 'multiply');
 
-                // 3. 眉毛與腮紅
+                // 3. 眉毛腮紅
                 drawNaturalLayer(landmarks, [70, 63, 105, 66, 107, 55, 65, 52], '#333333', 0.2, 3, 'multiply');
                 drawNaturalLayer(landmarks, [300, 293, 334, 296, 336, 285, 295, 282], '#333333', 0.2, 3, 'multiply');
                 drawHemeBlush(landmarks, activeLook.blush);
 
-                // 4. 唇部重塑渲染
+                // 4. 唇部
                 drawReshapedLips(landmarks, activeLook.lip);
 
                 if (showGuides) drawProportionGuides(landmarks);
@@ -203,15 +208,11 @@
             canvasCtx.restore();
         }
 
-        // 底妝渲染邏輯
         function drawBaseMakeup(landmarks, style) {
             if (style === 'natural') return;
-
             canvasCtx.save();
             const ovalPoints = FACE_OVAL.map(idx => landmarks[idx]);
-            
             if (style === 'matte') {
-                // 柔霧模式：輕微均勻膚色
                 canvasCtx.globalCompositeOperation = 'multiply';
                 canvasCtx.globalAlpha = 0.08;
                 canvasCtx.fillStyle = '#F5E3D5';
@@ -220,14 +221,9 @@
                 ovalPoints.forEach(p => canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height));
                 canvasCtx.fill();
             } else if (style === 'glow') {
-                // 水光模式：增加局部高光點
-                const highlights = [1, 4, 168]; // 鼻樑與額頭中心
-                highlights.forEach(idx => {
+                [1, 4, 168].forEach(idx => {
                     const pt = landmarks[idx];
-                    const grad = canvasCtx.createRadialGradient(
-                        pt.x * canvasElement.width, pt.y * canvasElement.height, 0,
-                        pt.x * canvasElement.width, pt.y * canvasElement.height, 40
-                    );
+                    const grad = canvasCtx.createRadialGradient(pt.x * canvasElement.width, pt.y * canvasElement.height, 0, pt.x * canvasElement.width, pt.y * canvasElement.height, 40);
                     grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
                     grad.addColorStop(1, 'transparent');
                     canvasCtx.fillStyle = grad;
@@ -240,7 +236,6 @@
             canvasCtx.restore();
         }
 
-        // 唇部與其他渲染 (繼承優化後的邏輯)
         function drawReshapedLips(landmarks, color) {
             const getPoints = (indices) => indices.map(idx => {
                 let p = { ...landmarks[idx] };
@@ -253,7 +248,6 @@
                 }
                 return p;
             });
-
             const outer = getPoints(LIPS_OUTER), inner = getPoints(LIPS_INNER);
             drawPath(outer, color, 0.65, 6, 'multiply');
             drawPath(inner, color, 0.8, 3, 'multiply');
@@ -298,7 +292,6 @@
             lines.forEach(y => { canvasCtx.beginPath(); canvasCtx.moveTo(canvasElement.width * 0.2, y * canvasElement.height); canvasCtx.lineTo(canvasElement.width * 0.8, y * canvasElement.height); canvasCtx.stroke(); });
         }
 
-        // UI 互動函數
         function changeUIMode(mode) {
             ['color', 'base', 'eye', 'shape'].forEach(m => {
                 document.getElementById(`${m}-panel`).style.display = m === mode ? 'block' : 'none';
@@ -325,10 +318,22 @@
         }
 
         const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-        faceMesh.setOptions({ refineLandmarks: true, minDetectionConfidence: 0.7 });
+        
+        // 提高信心閥值，減少抖動
+        faceMesh.setOptions({ 
+            refineLandmarks: true, 
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6 
+        });
         faceMesh.onResults(onResults);
 
-        const camera = new Camera(videoElement, { onFrame: async () => { await faceMesh.send({ image: videoElement }); }, width: 640, height: 480 });
+        // 明確指定手機端使用前鏡頭
+        const camera = new Camera(videoElement, {
+            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+            width: 640,
+            height: 480,
+            facingMode: 'user'
+        });
         camera.start();
 
         function initUI() {
@@ -348,7 +353,14 @@
 
         compareBtn.addEventListener('mousedown', () => showMakeup = false);
         compareBtn.addEventListener('mouseup', () => showMakeup = true);
-        document.getElementById('guide-toggle').addEventListener('click', () => { showGuides = !showGuides; document.getElementById('guide-toggle').classList.toggle('bg-black', showGuides); document.getElementById('guide-toggle').classList.toggle('text-white', showGuides); });
+        compareBtn.addEventListener('touchstart', (e) => { e.preventDefault(); showMakeup = false; });
+        compareBtn.addEventListener('touchend', () => showMakeup = true);
+
+        document.getElementById('guide-toggle').addEventListener('click', () => { 
+            showGuides = !showGuides; 
+            document.getElementById('guide-toggle').classList.toggle('bg-black', showGuides); 
+            document.getElementById('guide-toggle').classList.toggle('text-white', showGuides); 
+        });
         
         initUI();
     </script>
