@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>heme 虛擬試妝 - 專業全模組版</title>
+    <title>AI Beauty Try-On Plugin - 智能分析版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -26,7 +26,6 @@
             box-shadow: 0 10px 30px -5px rgba(233, 80, 160, 0.1);
         }
         
-        /* 控制攝像頭畫面與妝容繪圖層的關鍵對齊設定 */
         #video-element, #output-canvas {
             position: absolute;
             top: 0;
@@ -36,10 +35,7 @@
             object-fit: cover;
         }
 
-        .mirror {
-            transform: scaleX(-1);
-        }
-        
+        .mirror { transform: scaleX(-1); }
         .active-tab { color: #E950A0; font-weight: 700; border-bottom: 2px solid #E950A0; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
@@ -59,23 +55,24 @@
             text-align: center;
             background: white;
         }
-        .option-btn.active {
-            background-color: #E950A0;
-            color: #fff;
-            border-color: #E950A0;
-        }
+        .option-btn.active { background-color: #E950A0; color: #fff; border-color: #E950A0; }
 
-        #start-screen {
-            background-color: #FAF5F9;
-            z-index: 100;
-        }
+        #start-screen { background-color: #FAF5F9; z-index: 100; }
+        .btn-primary { background-color: #E950A0; transition: transform 0.2s ease; }
+        .btn-primary:active { transform: scale(0.95); }
 
-        .btn-primary {
-            background-color: #E950A0;
-            transition: transform 0.2s ease;
+        /* AI 掃描動畫 */
+        .scan-line {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #E950A0, transparent);
+            box-shadow: 0 0 15px #E950A0;
+            animation: scan 2s linear infinite;
+            display: none;
         }
-        .btn-primary:active {
-            transform: scale(0.95);
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
         }
     </style>
 </head>
@@ -83,34 +80,43 @@
 
     <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl relative">
         
-        <!-- 進入試妝前的歡迎畫面 -->
+        <!-- 歡迎畫面 -->
         <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center transition-opacity duration-700">
             <h2 class="text-[#E950A0] text-xl font-bold mb-32 tracking-wider uppercase">AI Beauty Try-On Plugin</h2>
-            
             <p class="text-2xl font-bold mb-12 text-gray-800 leading-relaxed">準備好開始您的<br>美妝體驗了嗎？</p>
-            
             <button id="init-btn" class="btn-primary text-white px-10 py-4 rounded-full text-lg font-bold shadow-lg mb-6">
                 開啟鏡頭並開始試妝
             </button>
-            
             <p class="text-gray-400 text-sm">* 點擊即表示允許瀏覽器存取攝影機</p>
         </div>
 
         <header class="p-5 text-center bg-[#FAF5F9]">
-            <h1 class="text-xl font-light tracking-[0.4em] uppercase text-[#333]">heme</h1>
+            <h1 class="text-sm font-bold tracking-[0.2em] uppercase text-[#333]">AI Beauty Try-On Plugin</h1>
             <div class="h-px w-8 bg-[#E950A0] mx-auto mt-2 opacity-30"></div>
-            <p class="text-[9px] text-[#E950A0] mt-2 tracking-[0.2em] uppercase font-bold">Virtual Experience</p>
+            <p class="text-[9px] text-[#E950A0] mt-2 tracking-[0.2em] uppercase font-bold italic">Smart Analysis System</p>
         </header>
 
-        <main id="app-content" class="flex-grow px-6 opacity-0 transition-opacity duration-1000">
+        <main id="app-content" class="flex-grow px-6 opacity-0 transition-opacity duration-1000 overflow-y-auto pb-10">
             <div class="vto-container mt-4 relative border border-pink-50">
                 <div id="loading-overlay" class="absolute inset-0 z-50 bg-white/90 flex flex-col items-center justify-center">
                     <div class="w-8 h-8 border-2 border-pink-100 border-t-[#E950A0] rounded-full animate-spin"></div>
-                    <p class="text-[10px] mt-4 tracking-widest text-[#E950A0] font-bold">AI 比例掃描中...</p>
+                    <p class="text-[10px] mt-4 tracking-widest text-[#E950A0] font-bold uppercase">AI Scanning...</p>
                 </div>
+
+                <div id="scan-bar" class="scan-line z-20"></div>
 
                 <video id="video-element" class="mirror" playsinline muted autoplay></video>
                 <canvas id="output-canvas" class="mirror"></canvas>
+
+                <!-- 浮動 AI 分析按鈕 -->
+                <div class="absolute top-4 right-4 z-30">
+                    <button id="ai-analyze-btn" class="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg border border-pink-100 flex items-center justify-center group active:scale-90 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#E950A0] group-hover:rotate-12 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out text-[10px] font-bold ml-2 text-[#E950A0]">AI 智慧分析推薦</span>
+                    </button>
+                </div>
 
                 <div class="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10">
                     <button id="compare-btn" class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] shadow-sm border border-white active:scale-95 transition">對比</button>
@@ -123,7 +129,22 @@
                 </div>
             </div>
 
-            <!-- 切換標籤面板 -->
+            <!-- 分析結果展示區 -->
+            <div id="ai-result-panel" class="hidden mt-6 p-4 bg-pink-50/50 rounded-2xl border border-pink-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="flex items-start mb-2">
+                    <div class="p-2 bg-white rounded-lg mr-3 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#E950A0]" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-800">AI 智能分析報告</h4>
+                        <p id="ai-analysis-text" class="text-[10px] text-gray-500 mt-1 leading-relaxed">正在解析您的五官特徵與膚色調性...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 選單面板 -->
             <div class="mt-6">
                 <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-100">
                     <button onclick="changeUIMode('color')" id="tab-color" class="pb-2 active-tab whitespace-nowrap uppercase">色號選購</button>
@@ -133,11 +154,9 @@
                 </div>
 
                 <div class="min-h-[140px]">
-                    <!-- 色號選擇 -->
                     <div id="color-panel" class="block">
                         <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="look-selector"></div>
                     </div>
-                    <!-- 底妝選擇 -->
                     <div id="base-panel" class="hidden">
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="setBaseStyle('natural')" id="base-natural" class="option-btn active uppercase">輕透原生</button>
@@ -145,7 +164,6 @@
                             <button onclick="setBaseStyle('glow')" id="base-glow" class="option-btn uppercase">貴婦水光</button>
                         </div>
                     </div>
-                    <!-- 眼妝選擇 -->
                     <div id="eye-panel" class="hidden">
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="setEyeStyle('daily')" id="eye-daily" class="option-btn active uppercase">日常深邃</button>
@@ -153,7 +171,6 @@
                             <button onclick="setEyeStyle('tea')" id="eye-tea" class="option-btn uppercase">炭焙拿鐵</button>
                         </div>
                     </div>
-                    <!-- 唇形選擇 -->
                     <div id="shape-panel" class="hidden">
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="setLipShape('natural')" id="shape-natural" class="option-btn active uppercase">原生唇形</button>
@@ -166,8 +183,8 @@
             </div>
         </main>
 
-        <footer class="p-6 pt-2 bg-white">
-            <button class="w-full bg-[#E950A0] text-white py-4 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase shadow-lg shadow-pink-100">
+        <footer class="p-6 pt-2 bg-white border-t border-gray-50">
+            <button class="w-full bg-[#E950A0] text-white py-4 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase shadow-lg shadow-pink-100 active:scale-[0.98] transition">
                 加入購物清單
             </button>
         </footer>
@@ -182,19 +199,24 @@
         const appContent = document.getElementById('app-content');
         const initBtn = document.getElementById('init-btn');
         const compareBtn = document.getElementById('compare-btn');
+        const analyzeBtn = document.getElementById('ai-analyze-btn');
+        const scanBar = document.getElementById('scan-bar');
+        const aiPanel = document.getElementById('ai-result-panel');
+        const aiText = document.getElementById('ai-analysis-text');
+
+        const apiKey = ""; // 執行環境會自動提供
 
         let currentLipShape = 'natural', currentBaseStyle = 'natural', currentEyeStyle = 'daily';
         let showMakeup = true, showGuides = false;
         
-        // 擴展色號範例
         const looks = [
-            { id: 'ginger', name: '01 柔薑', lip: '#A95842', eye: '#8B6A5A', blush: '#D5A893' },
-            { id: 'rose', name: '02 燕麥玫瑰', lip: '#B25F60', eye: '#967A7A', blush: '#C89B9B' },
-            { id: 'nut', name: '03 烤栗子', lip: '#8B4232', eye: '#7A5E4E', blush: '#B88F7F' },
-            { id: 'tea', name: '04 肉桂奶茶', lip: '#B26D57', eye: '#917869', blush: '#D2AF9D' },
-            { id: 'berry', name: '05 煙燻莓果', lip: '#8E4B56', eye: '#7A646E', blush: '#B78F98' },
-            { id: 'honey', name: '06 蜜糖橘', lip: '#C26949', eye: '#A68364', blush: '#E5B198' },
-            { id: 'cocoa', name: '07 慕斯可可', lip: '#6D3D32', eye: '#665248', blush: '#A38475' }
+            { id: 'ginger', name: '01 柔薑', lip: '#A95842', eye: '#8B6A5A', blush: '#D5A893', description: "適合偏暖色調膚色，呈現優雅知性感。" },
+            { id: 'rose', name: '02 燕麥玫瑰', lip: '#B25F60', eye: '#967A7A', blush: '#C89B9B', description: "適合中性或偏冷調膚色，打造溫柔浪漫氛圍。" },
+            { id: 'nut', name: '03 烤栗子', lip: '#8B4232', eye: '#7A5E4E', blush: '#B88F7F', description: "深邃暖棕色調，適合健康小麥肌。" },
+            { id: 'tea', name: '04 肉桂奶茶', lip: '#B26D57', eye: '#917869', blush: '#D2AF9D', description: "日常百搭色，讓氣色自然透亮。" },
+            { id: 'berry', name: '05 煙燻莓果', lip: '#8E4B56', eye: '#7A646E', blush: '#B78F98', description: "帶點冷調的紫紅，顯白效果極佳。" },
+            { id: 'honey', name: '06 蜜糖橘', lip: '#C26949', eye: '#A68364', blush: '#E5B198', description: "元氣十足的色彩，適合明亮的暖調肌。" },
+            { id: 'cocoa', name: '07 慕斯可可', lip: '#6D3D32', eye: '#665248', blush: '#A38475', description: "極具質感的冷咖色，推薦給追求獨特個性的你。" }
         ];
         let activeLook = looks[0];
 
@@ -202,13 +224,102 @@
         const LOWER_LIP = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78];
         const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
 
+        // --- AI 分析邏輯 ---
+        async function performAIAnalysis() {
+            try {
+                // UI 反饋：開始掃描
+                analyzeBtn.disabled = true;
+                scanBar.style.display = 'block';
+                aiPanel.classList.remove('hidden');
+                aiText.innerText = "正在分析您的肌膚調性與五官特徵...";
+
+                // 擷取當前畫面
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = videoElement.videoWidth;
+                tempCanvas.height = videoElement.videoHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(videoElement, 0, 0);
+                const base64Image = tempCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+
+                const prompt = `你是一位專業的美妝分析師。請分析這張照片中人物的膚色調性（暖調/冷調/中性）、臉型以及五官特色。
+                請從以下色號清單中推薦一款最適合她的顏色：${JSON.stringify(looks.map(l => ({id: l.id, name: l.name})))}。
+                並給出具體的化妝分析與建議。
+                請務必以 JSON 格式回應：
+                {
+                    "skin_tone": "膚色分析文字",
+                    "face_shape": "臉型分析文字",
+                    "recommended_id": "推薦的色號ID",
+                    "advice": "專業建議文字"
+                }`;
+
+                let retries = 0;
+                let responseText = "";
+                
+                while (retries < 5) {
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{
+                                    parts: [
+                                        { text: prompt },
+                                        { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+                                    ]
+                                }],
+                                generationConfig: { responseMimeType: "application/json" }
+                            })
+                        });
+                        const data = await response.json();
+                        responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (responseText) break;
+                    } catch (e) {
+                        retries++;
+                        await new Promise(r => setTimeout(r, Math.pow(2, retries) * 1000));
+                    }
+                }
+
+                if (!responseText) throw new Error("AI 分析失敗");
+
+                const result = JSON.parse(responseText);
+                
+                // 應用推薦色號
+                const recommendedLook = looks.find(l => l.id === result.recommended_id) || looks[0];
+                selectLook(recommendedLook);
+                
+                // 顯示建議
+                aiText.innerHTML = `<strong>${result.skin_tone}</strong><br>臉型：${result.face_shape}<br>建議：${result.advice}<br><span class="text-[#E950A0] font-bold">推薦：${recommendedLook.name}</span>`;
+
+            } catch (error) {
+                console.error(error);
+                aiText.innerText = "抱歉，目前 AI 掃描連線不穩定，請稍後再試。";
+            } finally {
+                scanBar.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        analyzeBtn.addEventListener('click', performAIAnalysis);
+
+        function selectLook(look) {
+            activeLook = look;
+            // 更新 UI 選中狀態
+            document.querySelectorAll('.swatch-item').forEach(el => {
+                const name = el.querySelector('p').innerText;
+                el.classList.toggle('active', name === look.name);
+            });
+            // 切換時提供視覺回饋
+            const info = document.querySelector('#product-info h3') || {innerText: ''};
+            info.innerText = `AI 推薦款式 - ${look.name}`;
+        }
+
+        // --- 繪圖與 MediaPipe 邏輯 ---
         function onResults(results) {
             if (loadingOverlay.style.opacity !== '0') {
                 loadingOverlay.style.opacity = '0';
                 setTimeout(() => loadingOverlay.style.display = 'none', 500);
             }
 
-            // 同步 Canvas 解析度
             if (videoElement.videoWidth > 0) {
                 if (canvasElement.width !== videoElement.videoWidth || canvasElement.height !== videoElement.videoHeight) {
                     canvasElement.width = videoElement.videoWidth;
@@ -221,49 +332,17 @@
             
             if (showMakeup && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
-                
-                // 1. 底妝質感
                 drawBaseMakeup(landmarks, currentBaseStyle);
-                
-                // 2. 眼部效果 (移除眉毛，保留眼妝並強化羽化)
                 const eyeColor = currentEyeStyle === 'rose' ? '#A68A8A' : (currentEyeStyle === 'tea' ? '#8C7665' : activeLook.eye);
                 drawNaturalLayer(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], eyeColor, 0.45, 12, 'multiply');
                 drawNaturalLayer(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], eyeColor, 0.45, 12, 'multiply');
-                
-                // 3. 腮紅 (更柔和的暈染)
                 drawHemeBlush(landmarks, activeLook.blush);
-                
-                // 4. 唇部重塑 (60% 透明度與羽化優化)
                 drawReshapedLips(landmarks, activeLook.lip);
-                
                 if (showGuides) drawProportionGuides(landmarks);
             }
             canvasCtx.restore();
         }
 
-        // --- 初始化相機功能 ---
-        initBtn.addEventListener('click', () => {
-            startScreen.style.opacity = '0';
-            appContent.style.opacity = '1';
-            setTimeout(() => {
-                startScreen.style.display = 'none';
-                startCamera();
-            }, 700);
-        });
-
-        function startCamera() {
-            const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-            faceMesh.setOptions({ refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
-            faceMesh.onResults(onResults);
-
-            const camera = new Camera(videoElement, {
-                onFrame: async () => { await faceMesh.send({ image: videoElement }); },
-                width: 640, height: 480, facingMode: 'user'
-            });
-            camera.start();
-        }
-
-        // --- 核心繪圖函數 ---
         function drawBaseMakeup(landmarks, style) {
             if (style === 'natural') return;
             canvasCtx.save();
@@ -294,10 +373,8 @@
                 return p;
             });
             const upper = getPoints(UPPER_LIP), lower = getPoints(LOWER_LIP);
-            
-            // 顯色度設定為 0.4 (即 60% 透明度) 並加強羽化 (8px)
             drawPath(upper, color, 0.4, 8, 'multiply');
-            drawPath(upper, color, 0.4, 4, 'multiply'); // 中心疊加層增加立體感
+            drawPath(upper, color, 0.4, 4, 'multiply');
             drawPath(lower, color, 0.4, 8, 'multiply');
             drawPath(lower, color, 0.4, 4, 'multiply');
         }
@@ -317,7 +394,7 @@
         function drawHemeBlush(landmarks, color) {
             [landmarks[205], landmarks[425]].forEach(pt => {
                 canvasCtx.save(); canvasCtx.globalCompositeOperation = 'multiply'; canvasCtx.globalAlpha = 0.45; 
-                canvasCtx.filter = 'blur(25px)'; // 腮紅加強暈染，模擬真實粉霧感
+                canvasCtx.filter = 'blur(25px)';
                 const grad = canvasCtx.createRadialGradient(pt.x * canvasElement.width, pt.y * canvasElement.height, 0, pt.x * canvasElement.width, pt.y * canvasElement.height, 50);
                 grad.addColorStop(0, color); grad.addColorStop(1, 'transparent');
                 canvasCtx.fillStyle = grad; canvasCtx.beginPath(); canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 50, 0, Math.PI * 2); canvasCtx.fill();
@@ -331,7 +408,27 @@
             lines.forEach(y => { canvasCtx.beginPath(); canvasCtx.moveTo(canvasElement.width * 0.2, y * canvasElement.height); canvasCtx.lineTo(canvasElement.width * 0.8, y * canvasElement.height); canvasCtx.stroke(); });
         }
 
-        // --- UI 控制邏輯 ---
+        // --- UI ---
+        initBtn.addEventListener('click', () => {
+            startScreen.style.opacity = '0';
+            appContent.style.opacity = '1';
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+                startCamera();
+            }, 700);
+        });
+
+        function startCamera() {
+            const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+            faceMesh.setOptions({ refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+            faceMesh.onResults(onResults);
+            const camera = new Camera(videoElement, {
+                onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+                width: 640, height: 480, facingMode: 'user'
+            });
+            camera.start();
+        }
+
         function changeUIMode(mode) {
             ['color', 'base', 'eye', 'shape'].forEach(m => {
                 document.getElementById(`${m}-panel`).style.display = m === mode ? 'block' : 'none';
@@ -362,17 +459,12 @@
             looks.forEach(look => {
                 const item = document.createElement('div');
                 item.className = `flex-shrink-0 cursor-pointer text-center swatch-item ${activeLook.id === look.id ? 'active' : ''}`;
-                item.onclick = () => {
-                    activeLook = look;
-                    document.querySelectorAll('.swatch-item').forEach(el => el.classList.remove('active'));
-                    item.classList.add('active');
-                };
+                item.onclick = () => selectLook(look);
                 item.innerHTML = `<div class="w-14 h-14 rounded-full border border-pink-100 shadow-sm mb-2 swatch-circle mx-auto" style="background: linear-gradient(135deg, ${look.lip} 40%, ${look.eye} 100%)"></div><p class="text-[9px] font-bold text-gray-700">${look.name}</p>`;
                 container.appendChild(item);
             });
         }
 
-        // 事件監聽 (支援滑鼠與觸控)
         compareBtn.addEventListener('mousedown', () => showMakeup = false);
         compareBtn.addEventListener('mouseup', () => showMakeup = true);
         compareBtn.addEventListener('touchstart', (e) => { e.preventDefault(); showMakeup = false; });
