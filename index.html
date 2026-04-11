@@ -3,78 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>heme 虛擬試妝 - 全模組專業版</title>
+    <title>heme 虛擬試妝 - 專業全模組版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-[#FBF9F7] text-[#5d5d5d]">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+        
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            touch-action: manipulation;
+            background-color: #FAF5F9; /* 參考圖片的淡紫粉色背景 */
+        }
 
-    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-sm">
-        <header class="p-5 text-center">
+        .vto-container {
+            aspect-ratio: 3/4;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #fff;
+            box-shadow: 0 10px 30px -5px rgba(233, 80, 160, 0.1);
+        }
+        
+        #video-element, #output-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .mirror {
+            transform: scaleX(-1);
+        }
+        
+        .active-tab { color: #E950A0; font-weight: 700; border-bottom: 2px solid #E950A0; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .swatch-item.active .swatch-circle {
+            border: 2px solid #E950A0;
+            padding: 2px;
+            background-clip: content-box;
+            transform: scale(1.1);
+        }
+
+        .option-btn {
+            border: 1px solid #F3E8F0;
+            padding: 10px 4px;
+            border-radius: 12px;
+            font-size: 11px;
+            transition: all 0.2s;
+            text-align: center;
+            background: white;
+        }
+        .option-btn.active {
+            background-color: #E950A0;
+            color: #fff;
+            border-color: #E950A0;
+        }
+
+        /* 進入畫面樣式 */
+        #start-screen {
+            background-color: #FAF5F9;
+            z-index: 100;
+        }
+
+        .btn-primary {
+            background-color: #E950A0;
+            transition: transform 0.2s ease;
+        }
+        .btn-primary:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="text-[#5d5d5d]">
+
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl relative">
+        
+        <!-- 進入試妝前的歡迎畫面 -->
+        <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center transition-opacity duration-700">
+            <h2 class="text-[#E950A0] text-xl font-bold mb-32 tracking-wider">AI Beauty Try-On Plugin</h2>
+            
+            <p class="text-2xl font-bold mb-12 text-gray-800 leading-relaxed">準備好開始您的<br>美妝體驗了嗎？</p>
+            
+            <button id="init-btn" class="btn-primary text-white px-10 py-4 rounded-full text-lg font-bold shadow-lg mb-6">
+                開啟鏡頭並開始試妝
+            </button>
+            
+            <p class="text-gray-400 text-sm">* 點擊即表示允許瀏覽器存取攝影機</p>
+        </div>
+
+        <header class="p-5 text-center bg-[#FAF5F9]">
             <h1 class="text-xl font-light tracking-[0.4em] uppercase text-[#333]">heme</h1>
-            <div class="h-px w-8 bg-[#ddd] mx-auto mt-2"></div>
-            <p class="text-[9px] text-gray-400 mt-2 tracking-[0.2em] uppercase">Mobile Stable Engine v2.0</p>
+            <div class="h-px w-8 bg-[#E950A0] mx-auto mt-2 opacity-30"></div>
+            <p class="text-[9px] text-[#E950A0] mt-2 tracking-[0.2em] uppercase font-bold">Virtual Experience</p>
         </header>
 
-        <main class="flex-grow px-6">
-            <div class="vto-container relative border border-gray-50 shadow-lg">
-                <div id="loading-overlay" class="absolute inset-0 z-50 bg-[#FBF9F7] flex flex-col items-center justify-center">
-                    <div class="w-6 h-6 border border-gray-200 border-t-[#a38b7e] rounded-full animate-spin"></div>
-                    <p class="text-[9px] mt-4 tracking-widest text-gray-400">正在優化手機定位...</p>
+        <main id="app-content" class="flex-grow px-6 opacity-0 transition-opacity duration-1000">
+            <div class="vto-container mt-4 relative border border-pink-50">
+                <div id="loading-overlay" class="absolute inset-0 z-50 bg-white/90 flex flex-col items-center justify-center">
+                    <div class="w-8 h-8 border-2 border-pink-100 border-t-[#E950A0] rounded-full animate-spin"></div>
+                    <p class="text-[10px] mt-4 tracking-widest text-[#E950A0] font-bold">AI 比例掃描中...</p>
                 </div>
 
-                <!-- 將 Video 置於底層 -->
                 <video id="video-element" class="mirror" playsinline muted autoplay></video>
-                <!-- Canvas 置於頂層，與 Video 尺寸同步 -->
                 <canvas id="output-canvas" class="mirror"></canvas>
 
                 <div class="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10">
-                    <button id="compare-btn" class="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] border border-gray-200 active:scale-95 transition">對比</button>
-                    <button id="capture-btn" class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition border border-gray-100">
-                        <div class="w-11 h-11 rounded-full border border-gray-100 bg-[#FDFBF9]"></div>
+                    <button id="compare-btn" class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] shadow-sm border border-white active:scale-95 transition">對比</button>
+                    <button id="capture-btn" class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition border border-pink-50">
+                        <div class="w-11 h-11 rounded-full border border-pink-50 bg-[#FAF5F9] flex items-center justify-center">
+                            <div class="w-4 h-4 rounded-full bg-[#E950A0] opacity-20"></div>
+                        </div>
                     </button>
-                    <button id="guide-toggle" class="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] border border-gray-200 active:scale-95 transition">比例</button>
+                    <button id="guide-toggle" class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] shadow-sm border border-white active:scale-95 transition">比例</button>
                 </div>
             </div>
 
+            <!-- 切換標籤 -->
             <div class="mt-6">
-                <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-50">
-                    <button onclick="changeUIMode('color')" id="tab-color" class="pb-2 active-tab whitespace-nowrap uppercase">色號</button>
-                    <button onclick="changeUIMode('base')" id="tab-base" class="pb-2 whitespace-nowrap uppercase">底妝</button>
-                    <button onclick="changeUIMode('eye')" id="tab-eye" class="pb-2 whitespace-nowrap uppercase">眼妝</button>
-                    <button onclick="changeUIMode('shape')" id="tab-shape" class="pb-2 whitespace-nowrap uppercase">唇形</button>
+                <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-100">
+                    <button onclick="changeUIMode('color')" id="tab-color" class="pb-2 active-tab whitespace-nowrap uppercase">色號選購</button>
+                    <button onclick="changeUIMode('base')" id="tab-base" class="pb-2 whitespace-nowrap uppercase">底妝質感</button>
+                    <button onclick="changeUIMode('eye')" id="tab-eye" class="pb-2 whitespace-nowrap uppercase">眼影效果</button>
+                    <button onclick="changeUIMode('shape')" id="tab-shape" class="pb-2 whitespace-nowrap uppercase">唇形修飾</button>
                 </div>
 
                 <div class="min-h-[140px]">
                     <div id="color-panel" class="block">
                         <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="look-selector"></div>
                     </div>
-
                     <div id="base-panel" class="hidden">
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="setBaseStyle('natural')" id="base-natural" class="option-btn active uppercase tracking-tighter">輕透原生</button>
-                            <button onclick="setBaseStyle('matte')" id="base-matte" class="option-btn uppercase tracking-tighter">極致柔霧</button>
-                            <button onclick="setBaseStyle('glow')" id="base-glow" class="option-btn uppercase tracking-tighter">絲絨水光</button>
+                            <button onclick="setBaseStyle('natural')" id="base-natural" class="option-btn active uppercase">輕透原生</button>
+                            <button onclick="setBaseStyle('matte')" id="base-matte" class="option-btn uppercase">絲絨柔霧</button>
+                            <button onclick="setBaseStyle('glow')" id="base-glow" class="option-btn uppercase">貴婦水光</button>
                         </div>
                     </div>
-
                     <div id="eye-panel" class="hidden">
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="setEyeStyle('daily')" id="eye-daily" class="option-btn active uppercase tracking-tighter">日常深邃</button>
-                            <button onclick="setEyeStyle('rose')" id="eye-rose" class="option-btn uppercase tracking-tighter">晨曦玫瑰</button>
-                            <button onclick="setEyeStyle('tea')" id="eye-tea" class="option-btn uppercase tracking-tighter">烏龍拿鐵</button>
+                            <button onclick="setEyeStyle('daily')" id="eye-daily" class="option-btn active uppercase">日常深邃</button>
+                            <button onclick="setEyeStyle('rose')" id="eye-rose" class="option-btn uppercase">燕麥玫瑰</button>
+                            <button onclick="setEyeStyle('tea')" id="eye-tea" class="option-btn uppercase">炭焙拿鐵</button>
                         </div>
                     </div>
-
                     <div id="shape-panel" class="hidden">
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="setLipShape('natural')" id="shape-natural" class="option-btn active uppercase tracking-widest">標準原色</button>
-                            <button onclick="setLipShape('plump')" id="shape-plump" class="option-btn uppercase tracking-widest">豐盈厚唇</button>
-                            <button onclick="setLipShape('slim')" id="shape-slim" class="option-btn uppercase tracking-widest">精緻薄唇</button>
-                            <button onclick="setLipShape('m-shape')" id="shape-m-shape" class="option-btn uppercase tracking-widest">Ｍ字微笑唇</button>
+                            <button onclick="setLipShape('natural')" id="shape-natural" class="option-btn active uppercase">原生唇形</button>
+                            <button onclick="setLipShape('plump')" id="shape-plump" class="option-btn uppercase">豐盈飽滿</button>
+                            <button onclick="setLipShape('slim')" id="shape-slim" class="option-btn uppercase">清秀精緻</button>
+                            <button onclick="setLipShape('m-shape')" id="shape-m-shape" class="option-btn uppercase">Ｍ字微笑</button>
                         </div>
                     </div>
                 </div>
@@ -82,7 +163,9 @@
         </main>
 
         <footer class="p-6 pt-2 bg-white">
-            <button class="w-full bg-[#000] text-white py-4 rounded-md font-bold text-[10px] tracking-[0.3em] uppercase shadow-lg">加入我的美妝清單</button>
+            <button class="w-full bg-[#E950A0] text-white py-4 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase shadow-lg shadow-pink-100">
+                加入購物清單
+            </button>
         </footer>
     </div>
 
@@ -91,6 +174,9 @@
         const canvasElement = document.getElementById('output-canvas');
         const canvasCtx = canvasElement.getContext('2d');
         const loadingOverlay = document.getElementById('loading-overlay');
+        const startScreen = document.getElementById('start-screen');
+        const appContent = document.getElementById('app-content');
+        const initBtn = document.getElementById('init-btn');
         const compareBtn = document.getElementById('compare-btn');
 
         let currentLipShape = 'natural', currentBaseStyle = 'natural', currentEyeStyle = 'daily';
@@ -107,18 +193,16 @@
         ];
         let activeLook = looks[0];
 
-        const LIPS_OUTER = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
-        const LIPS_INNER = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
+        const UPPER_LIP = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191, 78];
+        const LOWER_LIP = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78];
         const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
 
         function onResults(results) {
-            // 隱藏加載層
             if (loadingOverlay.style.opacity !== '0') {
                 loadingOverlay.style.opacity = '0';
                 setTimeout(() => loadingOverlay.style.display = 'none', 500);
             }
 
-            // 關鍵：同步解析度，這能防止座標在手機上跑掉
             if (videoElement.videoWidth > 0) {
                 if (canvasElement.width !== videoElement.videoWidth || canvasElement.height !== videoElement.videoHeight) {
                     canvasElement.width = videoElement.videoWidth;
@@ -131,51 +215,57 @@
             
             if (showMakeup && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
-                
-                // 1. 底妝
                 drawBaseMakeup(landmarks, currentBaseStyle);
-
-                // 2. 眼妝
                 const eyeColor = currentEyeStyle === 'rose' ? '#A68A8A' : (currentEyeStyle === 'tea' ? '#8C7665' : activeLook.eye);
                 drawNaturalLayer(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], eyeColor, 0.45, 8, 'multiply');
                 drawNaturalLayer(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], eyeColor, 0.45, 8, 'multiply');
-
-                // 3. 眉毛腮紅
                 drawNaturalLayer(landmarks, [70, 63, 105, 66, 107, 55, 65, 52], '#333333', 0.2, 3, 'multiply');
                 drawNaturalLayer(landmarks, [300, 293, 334, 296, 336, 285, 295, 282], '#333333', 0.2, 3, 'multiply');
                 drawHemeBlush(landmarks, activeLook.blush);
-
-                // 4. 唇部
                 drawReshapedLips(landmarks, activeLook.lip);
-
                 if (showGuides) drawProportionGuides(landmarks);
             }
             canvasCtx.restore();
         }
 
+        // --- 初始化功能 ---
+        initBtn.addEventListener('click', () => {
+            startScreen.style.opacity = '0';
+            appContent.style.opacity = '1';
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+                startCamera();
+            }, 700);
+        });
+
+        function startCamera() {
+            const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+            faceMesh.setOptions({ refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+            faceMesh.onResults(onResults);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+                width: 640, height: 480, facingMode: 'user'
+            });
+            camera.start();
+        }
+
+        // --- 繪製函數 ---
         function drawBaseMakeup(landmarks, style) {
             if (style === 'natural') return;
             canvasCtx.save();
             const ovalPoints = FACE_OVAL.map(idx => landmarks[idx]);
             if (style === 'matte') {
-                canvasCtx.globalCompositeOperation = 'multiply';
-                canvasCtx.globalAlpha = 0.08;
-                canvasCtx.fillStyle = '#F5E3D5';
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(ovalPoints[0].x * canvasElement.width, ovalPoints[0].y * canvasElement.height);
-                ovalPoints.forEach(p => canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height));
-                canvasCtx.fill();
+                canvasCtx.globalCompositeOperation = 'multiply'; canvasCtx.globalAlpha = 0.08; canvasCtx.fillStyle = '#F5E3D5';
+                canvasCtx.beginPath(); canvasCtx.moveTo(ovalPoints[0].x * canvasElement.width, ovalPoints[0].y * canvasElement.height);
+                ovalPoints.forEach(p => canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height)); canvasCtx.fill();
             } else if (style === 'glow') {
                 [1, 4, 168].forEach(idx => {
                     const pt = landmarks[idx];
                     const grad = canvasCtx.createRadialGradient(pt.x * canvasElement.width, pt.y * canvasElement.height, 0, pt.x * canvasElement.width, pt.y * canvasElement.height, 40);
-                    grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-                    grad.addColorStop(1, 'transparent');
-                    canvasCtx.fillStyle = grad;
-                    canvasCtx.globalCompositeOperation = 'screen';
-                    canvasCtx.beginPath();
-                    canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 40, 0, Math.PI * 2);
-                    canvasCtx.fill();
+                    grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)'); grad.addColorStop(1, 'transparent');
+                    canvasCtx.fillStyle = grad; canvasCtx.globalCompositeOperation = 'screen';
+                    canvasCtx.beginPath(); canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 40, 0, Math.PI * 2); canvasCtx.fill();
                 });
             }
             canvasCtx.restore();
@@ -187,56 +277,45 @@
                 const centerX = landmarks[13].x, centerY = (landmarks[13].y + landmarks[14].y) / 2;
                 if (currentLipShape === 'plump') { p.x += (p.x - centerX) * 0.12; p.y += (p.y - centerY) * 0.12; }
                 else if (currentLipShape === 'slim') { p.x -= (p.x - centerX) * 0.08; p.y -= (p.y - centerY) * 0.08; }
-                else if (currentLipShape === 'm-shape') { 
-                    if ([37, 0, 267].includes(idx)) p.y -= 0.005;
-                    if ([61, 291].includes(idx)) p.y -= 0.003;
-                }
+                else if (currentLipShape === 'm-shape') { if ([37, 0, 267].includes(idx)) p.y -= 0.005; if ([61, 291].includes(idx)) p.y -= 0.003; }
                 return p;
             });
-            const outer = getPoints(LIPS_OUTER), inner = getPoints(LIPS_INNER);
-            drawPath(outer, color, 0.65, 6, 'multiply');
-            drawPath(inner, color, 0.8, 3, 'multiply');
+            const upper = getPoints(UPPER_LIP), lower = getPoints(LOWER_LIP);
+            drawPath(upper, color, 0.65, 5, 'multiply');
+            drawPath(upper, color, 0.8, 2, 'multiply');
+            drawPath(lower, color, 0.65, 5, 'multiply');
+            drawPath(lower, color, 0.8, 2, 'multiply');
         }
 
         function drawPath(points, color, alpha, blur, composite) {
-            canvasCtx.save();
-            canvasCtx.globalCompositeOperation = composite;
-            canvasCtx.globalAlpha = alpha;
-            canvasCtx.filter = `blur(${blur}px)`;
-            canvasCtx.fillStyle = color;
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(points[0].x * canvasElement.width, points[0].y * canvasElement.height);
+            canvasCtx.save(); canvasCtx.globalCompositeOperation = composite; canvasCtx.globalAlpha = alpha;
+            canvasCtx.filter = `blur(${blur}px)`; canvasCtx.fillStyle = color;
+            canvasCtx.beginPath(); canvasCtx.moveTo(points[0].x * canvasElement.width, points[0].y * canvasElement.height);
             points.forEach(p => canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height));
-            canvasCtx.closePath();
-            canvasCtx.fill();
-            canvasCtx.restore();
+            canvasCtx.closePath(); canvasCtx.fill(); canvasCtx.restore();
         }
 
         function drawNaturalLayer(landmarks, indices, color, alpha, blur, composite) {
-            const points = indices.map(i => landmarks[i]);
-            drawPath(points, color, alpha, blur, composite);
+            const points = indices.map(i => landmarks[i]); drawPath(points, color, alpha, blur, composite);
         }
 
         function drawHemeBlush(landmarks, color) {
             [landmarks[205], landmarks[425]].forEach(pt => {
-                canvasCtx.save();
-                canvasCtx.globalCompositeOperation = 'multiply';
-                canvasCtx.globalAlpha = 0.45;
-                canvasCtx.filter = 'blur(18px)'; 
+                canvasCtx.save(); canvasCtx.globalCompositeOperation = 'multiply'; canvasCtx.globalAlpha = 0.45; canvasCtx.filter = 'blur(18px)'; 
                 const grad = canvasCtx.createRadialGradient(pt.x * canvasElement.width, pt.y * canvasElement.height, 0, pt.x * canvasElement.width, pt.y * canvasElement.height, 50);
                 grad.addColorStop(0, color); grad.addColorStop(1, 'transparent');
-                canvasCtx.fillStyle = grad;
-                canvasCtx.beginPath(); canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 50, 0, Math.PI * 2); canvasCtx.fill();
+                canvasCtx.fillStyle = grad; canvasCtx.beginPath(); canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 50, 0, Math.PI * 2); canvasCtx.fill();
                 canvasCtx.restore();
             });
         }
 
         function drawProportionGuides(landmarks) {
-            canvasCtx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; canvasCtx.lineWidth = 0.5;
+            canvasCtx.strokeStyle = '#E950A0'; canvasCtx.lineWidth = 0.8; canvasCtx.setLineDash([5, 5]);
             const lines = [landmarks[10].y, landmarks[168].y, landmarks[2].y, landmarks[152].y];
             lines.forEach(y => { canvasCtx.beginPath(); canvasCtx.moveTo(canvasElement.width * 0.2, y * canvasElement.height); canvasCtx.lineTo(canvasElement.width * 0.8, y * canvasElement.height); canvasCtx.stroke(); });
         }
 
+        // --- UI 控制 ---
         function changeUIMode(mode) {
             ['color', 'base', 'eye', 'shape'].forEach(m => {
                 document.getElementById(`${m}-panel`).style.display = m === mode ? 'block' : 'none';
@@ -262,25 +341,6 @@
             document.getElementById(`shape-${shape}`).classList.add('active');
         }
 
-        const faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
-        
-        // 提高信心閥值，減少抖動
-        faceMesh.setOptions({ 
-            refineLandmarks: true, 
-            minDetectionConfidence: 0.6,
-            minTrackingConfidence: 0.6 
-        });
-        faceMesh.onResults(onResults);
-
-        // 明確指定手機端使用前鏡頭
-        const camera = new Camera(videoElement, {
-            onFrame: async () => { await faceMesh.send({ image: videoElement }); },
-            width: 640,
-            height: 480,
-            facingMode: 'user'
-        });
-        camera.start();
-
         function initUI() {
             const container = document.getElementById('look-selector');
             looks.forEach(look => {
@@ -291,21 +351,17 @@
                     document.querySelectorAll('.swatch-item').forEach(el => el.classList.remove('active'));
                     item.classList.add('active');
                 };
-                item.innerHTML = `<div class="w-14 h-14 rounded-full border border-gray-100 shadow-sm mb-2 swatch-circle mx-auto" style="background: linear-gradient(135deg, ${look.lip} 40%, ${look.eye} 100%)"></div><p class="text-[9px] font-bold text-gray-700">${look.name}</p>`;
+                item.innerHTML = `<div class="w-14 h-14 rounded-full border border-pink-100 shadow-sm mb-2 swatch-circle mx-auto" style="background: linear-gradient(135deg, ${look.lip} 40%, ${look.eye} 100%)"></div><p class="text-[9px] font-bold text-gray-700">${look.name}</p>`;
                 container.appendChild(item);
             });
         }
 
+        // 觸控優化
         compareBtn.addEventListener('mousedown', () => showMakeup = false);
         compareBtn.addEventListener('mouseup', () => showMakeup = true);
         compareBtn.addEventListener('touchstart', (e) => { e.preventDefault(); showMakeup = false; });
         compareBtn.addEventListener('touchend', () => showMakeup = true);
-
-        document.getElementById('guide-toggle').addEventListener('click', () => { 
-            showGuides = !showGuides; 
-            document.getElementById('guide-toggle').classList.toggle('bg-black', showGuides); 
-            document.getElementById('guide-toggle').classList.toggle('text-white', showGuides); 
-        });
+        document.getElementById('guide-toggle').addEventListener('click', () => { showGuides = !showGuides; });
         
         initUI();
     </script>
