@@ -248,7 +248,7 @@
                 tempCanvas.height = videoElement.videoHeight * scale;
                 const tempCtx = tempCanvas.getContext('2d');
                 tempCtx.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
-                const base64Image = tempCanvas.toDataURL('image/jpeg', 0.3).split(',')[1];
+                const base64Image = tempCanvas.toDataURL('image/jpeg', 0.2).split(',')[1];
 
                 const systemPrompt = `You are a professional makeup AI. Analyze the skin tone and face shape of the user.
                 Pick ONE ideal color from this list: ${JSON.stringify(looks.map(l => ({id: l.id, name: l.name})))} stably.
