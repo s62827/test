@@ -8,62 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
-        
-        body { 
-            font-family: 'Noto Sans TC', sans-serif; 
-            touch-action: manipulation; /* 優化手機點擊 */
-        }
-
-        .vto-container {
-            aspect-ratio: 3/4;
-            position: relative;
-            overflow: hidden;
-            border-radius: 12px;
-            background: #000;
-        }
-        
-        /* 關鍵：確保 Video 與 Canvas 完美重疊且屬性一致 */
-        #video-element, #output-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 確保兩者裁剪方式相同 */
-        }
-
-        /* 手機端建議使用 CSS 翻轉，不要在 JS 裡翻轉座標，避免計算誤差 */
-        .mirror {
-            transform: scaleX(-1);
-        }
-        
-        .active-tab { color: #000; font-weight: 700; border-bottom: 2px solid #000; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        .swatch-item.active .swatch-circle {
-            border: 2px solid #000;
-            padding: 2px;
-            background-clip: content-box;
-            transform: scale(1.1);
-        }
-
-        .option-btn {
-            border: 1px solid #e5e7eb;
-            padding: 10px 4px;
-            border-radius: 8px;
-            font-size: 11px;
-            transition: all 0.2s;
-            text-align: center;
-            background: white;
-        }
-        .option-btn.active {
-            background-color: #000;
-            color: #fff;
-            border-color: #000;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-[#FBF9F7] text-[#5d5d5d]">
 
