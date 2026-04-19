@@ -14,7 +14,7 @@
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
             touch-action: manipulation;
-            background-color: #FAF5F9; 
+            background-color: #fff; 
         }
 
         .vto-container {
@@ -23,7 +23,7 @@
             overflow: hidden;
             border-radius: 20px;
             background: #fff;
-            box-shadow: 0 10px 30px -5px rgba(233, 80, 160, 0.1);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
         }
         
         #video-element, #output-canvas {
@@ -36,11 +36,22 @@
         }
 
         .mirror { transform: scaleX(-1); }
-        .active-tab { color: #E950A0; font-weight: 700; border-bottom: 2px solid #E950A0; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-tab { color: #1a1a1a; font-weight: 700; border-bottom: 2px solid #1a1a1a; }
+        .swatch-scroll-wrap {
+            position: relative;
+        }
+        .swatch-scroll-wrap::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 0; bottom: 0;
+            width: 32px;
+            background: linear-gradient(to right, transparent, white);
+            pointer-events: none;
+        }
+        .no-scrollbar { -webkit-overflow-scrolling: touch; }
         
         .swatch-item.active .swatch-circle {
-            border: 2px solid #E950A0;
+            border: 2px solid #1a1a1a;
             padding: 2px;
             background-clip: content-box;
             transform: scale(1.1);
@@ -55,17 +66,17 @@
             text-align: center;
             background: white;
         }
-        .option-btn.active { background-color: #E950A0; color: #fff; border-color: #E950A0; }
+        .option-btn.active { background-color: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 
-        #start-screen { background-color: #FAF5F9; z-index: 100; }
-        .btn-primary { background-color: #E950A0; transition: transform 0.2s ease; }
+        #start-screen { background-color: #fff; z-index: 100; }
+        .btn-primary { background-color: #1a1a1a; transition: transform 0.2s ease; }
         .btn-primary:active { transform: scale(0.95); }
 
         .scan-line {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 2px;
-            background: linear-gradient(90deg, transparent, #E950A0, transparent);
-            box-shadow: 0 0 15px #E950A0;
+            background: linear-gradient(90deg, transparent, #1a1a1a, transparent);
+            box-shadow: 0 0 15px #1a1a1a;
             animation: scan 2s linear infinite;
             display: none;
         }
@@ -81,25 +92,31 @@
         
         <!-- 歡迎頁面 -->
         <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center transition-opacity duration-700">
-            <h2 class="text-[#E950A0] text-xl font-bold mb-32 tracking-wider uppercase">AI Beauty Try-On Plugin</h2>
-            <p class="text-2xl font-bold mb-12 text-gray-800 leading-relaxed">準備好開始您的<br>美妝體驗了嗎？</p>
+            <h2 class="text-[#1a1a1a] text-xl font-bold mb-20 tracking-wider uppercase">AI Beauty Try-On Plugin</h2>
+             <div class="bg-stone-50 p-6 rounded-[2rem] text-left mb-10 border border-stone-100 shadow-sm">
+                <p class="text-sm font-bold mb-4 text-stone-800">為了確保「自然服貼」效果，請注意：</p>
+                <div class="space-y-3 text-xs text-stone-500">
+                    <p>1. 💡 正確燈光：請面向光源，確保光線充足。</p>
+                    <p>2. ❗ 避免濃妝：建議素顏或淡妝使用，以確保最佳體驗。</p>
+                </div>
+            </div>
             <button id="init-btn" class="btn-primary text-white px-10 py-4 rounded-full text-lg font-bold shadow-lg mb-6">
                 開啟鏡頭並開始試妝
             </button>
             <p class="text-gray-400 text-sm">* 點擊即表示允許瀏覽器存取攝影機</p>
         </div>
 
-        <header class="p-5 text-center bg-[#FAF5F9]">
+        <header class="p-5 text-center bg-[#fff]">
             <h1 class="text-sm font-bold tracking-[0.2em] uppercase text-[#333]">AI Beauty Try-On Plugin</h1>
-            <div class="h-px w-8 bg-[#E950A0] mx-auto mt-2 opacity-30"></div>
-            <p class="text-[9px] text-[#E950A0] mt-2 tracking-[0.2em] uppercase font-bold italic">Smart Analysis System</p>
+            <div class="h-px w-8 bg-[#1a1a1a] mx-auto mt-2 opacity-30"></div>
+            <p class="text-[9px] text-[#1a1a1a] mt-2 tracking-[0.2em] uppercase font-bold italic">Smart Analysis System</p>
         </header>
 
         <main id="app-content" class="flex-grow px-6 opacity-0 transition-opacity duration-1000 overflow-y-auto pb-10">
-            <div class="vto-container mt-4 relative border border-pink-50">
+            <div class="vto-container mt-4 relative border border-gray-100">
                 <div id="loading-overlay" class="absolute inset-0 z-50 bg-white/90 flex flex-col items-center justify-center">
-                    <div class="w-8 h-8 border-2 border-pink-100 border-t-[#E950A0] rounded-full animate-spin"></div>
-                    <p class="text-[10px] mt-4 tracking-widest text-[#E950A0] font-bold uppercase">AI Scanning...</p>
+                    <div class="w-8 h-8 border-2 border-gray-200 border-t-[#1a1a1a] rounded-full animate-spin"></div>
+                    <p class="text-[10px] mt-4 tracking-widest text-[#1a1a1a] font-bold uppercase">AI Scanning...</p>
                 </div>
 
                 <div id="scan-bar" class="scan-line z-20"></div>
@@ -109,30 +126,26 @@
 
                 <!-- 浮動 AI 分析按鈕 -->
                 <div class="absolute top-4 right-4 z-30">
-                    <button id="ai-analyze-btn" class="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg border border-pink-100 flex items-center justify-center group active:scale-90 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#E950A0] group-hover:rotate-12 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button id="ai-analyze-btn" class="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg border border-gray-200 flex items-center justify-center group active:scale-90 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1a1a1a] group-hover:rotate-12 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                         </svg>
-                        <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out text-[10px] font-bold ml-2 text-[#E950A0]">AI 智慧分析推薦</span>
+                        <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out text-[10px] font-bold ml-2 text-[#1a1a1a]">AI 智慧分析推薦</span>
                     </button>
                 </div>
 
                 <div class="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10">
                     <button id="compare-btn" class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] shadow-sm border border-white active:scale-95 transition">對比</button>
-                    <button id="capture-btn" class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition border border-pink-50">
-                        <div class="w-11 h-11 rounded-full border border-pink-50 bg-[#FAF5F9] flex items-center justify-center">
-                            <div class="w-4 h-4 rounded-full bg-[#E950A0] opacity-20"></div>
-                        </div>
-                    </button>
+                    
                     <button id="guide-toggle" class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] shadow-sm border border-white active:scale-95 transition">比例</button>
                 </div>
             </div>
 
             <!-- 分析報告展示 -->
-            <div id="ai-result-panel" class="hidden mt-6 p-4 bg-pink-50/50 rounded-2xl border border-pink-100">
+            <div id="ai-result-panel" class="hidden mt-6 p-4 bg-gray-50/50 rounded-2xl border border-gray-200">
                 <div class="flex items-start mb-2">
                     <div class="p-2 bg-white rounded-lg mr-3 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#E950A0]" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1a1a1a]" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                         </svg>
                     </div>
@@ -146,15 +159,32 @@
             <!-- 選單標籤 -->
             <div class="mt-6">
                 <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-100">
-                    <button onclick="changeUIMode('color')" id="tab-color" class="pb-2 active-tab whitespace-nowrap uppercase">色號選購</button>
+                    <button onclick="changeUIMode('lip')" id="tab-lip" class="pb-2 active-tab whitespace-nowrap uppercase">唇妝</button>
+                    <button onclick="changeUIMode('eye-color')" id="tab-eye-color" class="pb-2 whitespace-nowrap uppercase">眼妝</button>
+                    <button onclick="changeUIMode('blush')" id="tab-blush" class="pb-2 whitespace-nowrap uppercase">腮紅</button>
                     <button onclick="changeUIMode('base')" id="tab-base" class="pb-2 whitespace-nowrap uppercase">底妝質感</button>
                     <button onclick="changeUIMode('eye')" id="tab-eye" class="pb-2 whitespace-nowrap uppercase">眼影效果</button>
                     <button onclick="changeUIMode('shape')" id="tab-shape" class="pb-2 whitespace-nowrap uppercase">唇形修飾</button>
                 </div>
 
                 <div class="min-h-[140px]">
-                    <div id="color-panel" class="block">
-                        <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="look-selector"></div>
+                    <!-- 唇妝色票 -->
+                    <div id="lip-panel" class="block">
+                        <div class="swatch-scroll-wrap">
+                            <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="lip-selector" style="flex-wrap:nowrap; min-width:0;"></div>
+                        </div>
+                    </div>
+                    <!-- 眼妝色票 -->
+                    <div id="eye-color-panel" class="hidden">
+                        <div class="swatch-scroll-wrap">
+                            <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="eye-selector" style="flex-wrap:nowrap; min-width:0;"></div>
+                        </div>
+                    </div>
+                    <!-- 腮紅色票 -->
+                    <div id="blush-panel" class="hidden">
+                        <div class="swatch-scroll-wrap">
+                            <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="blush-selector" style="flex-wrap:nowrap; min-width:0;"></div>
+                        </div>
                     </div>
                     <div id="base-panel" class="hidden">
                         <div class="grid grid-cols-3 gap-2">
@@ -183,8 +213,63 @@
         </main>
 
         <footer class="p-6 pt-2 bg-white border-t border-gray-50">
-            <button class="w-full bg-[#E950A0] text-white py-4 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase shadow-lg shadow-pink-100">
+            <button id="cart-btn" class="w-full bg-[#1a1a1a] text-white py-4 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase shadow-lg shadow-gray-200">
                 加入購物清單
+            </button>
+        </footer>
+    </div>
+
+    <!-- 購物清單頁面 -->
+    <div id="cart-screen" class="hidden max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl">
+        <header class="p-5 bg-white border-b border-gray-100 flex items-center relative">
+            <button id="cart-back-btn" class="flex items-center gap-1 text-xs font-bold tracking-wider text-[#1a1a1a] active:scale-95 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                返回
+            </button>
+            <div class="flex-grow text-center">
+                <h1 class="text-sm font-bold tracking-[0.2em] uppercase text-[#333]">購物清單</h1>
+                <p class="text-[9px] text-[#1a1a1a] mt-1 tracking-[0.2em] uppercase font-bold italic">My Selection</p>
+            </div>
+            <div class="w-12"></div>
+        </header>
+
+        <main class="flex-grow overflow-y-auto px-6 py-6">
+            <div id="cart-empty" class="flex flex-col items-center justify-center h-60 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <p class="text-xs text-gray-400 tracking-wider">尚未選擇任何產品</p>
+                <p class="text-[10px] text-gray-300 mt-1">請回到試妝頁面選擇妝容</p>
+            </div>
+            <div id="cart-items" class="space-y-3"></div>
+            <div id="cart-summary" class="hidden mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <h3 class="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-3">訂單摘要</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs text-gray-600">
+                        <span>商品小計</span>
+                        <span id="subtotal-price">NT$ 0</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-600">
+                        <span>運費</span>
+                        <span class="text-green-600 font-bold">免費</span>
+                    </div>
+                    <div class="h-px bg-gray-200 my-2"></div>
+                    <div class="flex justify-between text-sm font-bold text-[#1a1a1a]">
+                        <span>總計</span>
+                        <span id="total-price">NT$ 0</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="p-6 pt-2 bg-white border-t border-gray-50 space-y-2">
+            <button class="w-full bg-[#1a1a1a] text-white py-4 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase shadow-lg shadow-gray-200">
+                立即結帳
+            </button>
+            <button id="cart-back-btn2" class="w-full border border-gray-200 text-[#1a1a1a] py-3 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase active:scale-95 transition">
+                繼續選購
             </button>
         </footer>
     </div>
@@ -218,6 +303,14 @@
             { id: 'cocoa', name: '07 慕斯可可', lip: '#6D3D32', eye: '#665248', blush: '#A38475' }
         ];
         let activeLook = looks[0];
+
+        // 三個部位各自獨立的顏色狀態（預設未選）
+        let activeLipColor = null;
+        let activeEyeColor = null;
+        let activeBlushColor = null;
+        let activeLipId = null;
+        let activeEyeId = null;
+        let activeBlushId = null;
 
         const UPPER_LIP = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191, 78];
         const LOWER_LIP = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78];
@@ -313,7 +406,7 @@
                 const recommendedLook = looks.find(l => l.id === finalData.recommended_id) || looks[0];
                 selectLook(recommendedLook);
                 
-                aiText.innerHTML = `<strong>${finalData.skin_tone}</strong> | 臉型：${finalData.face_shape}<br>建議：${finalData.advice}<br><span class="text-[#E950A0] font-bold">為您推薦：${recommendedLook.name}</span>`;
+                aiText.innerHTML = `<strong>${finalData.skin_tone}</strong> | 臉型：${finalData.face_shape}<br>建議：${finalData.advice}<br><span class="text-[#1a1a1a] font-bold">為您推薦：${recommendedLook.name}</span>`;
 
             } catch (error) {
                 console.error("Analysis Failed:", error);
@@ -328,10 +421,42 @@
 
         function selectLook(look) {
             activeLook = look;
-            document.querySelectorAll('.swatch-item').forEach(el => {
-                const name = el.querySelector('p').innerText;
-                el.classList.toggle('active', name === look.name);
-            });
+            // 同時更新三個部位顏色（AI 推薦時使用）
+            activeLipColor = look.lip; activeLipId = look.id;
+            activeEyeColor = look.eye; activeEyeId = look.id;
+            activeBlushColor = look.blush; activeBlushId = look.id;
+            refreshSwatches();
+        }
+
+        function setLipColor(look) {
+            if (activeLipId === look.id) {
+                activeLipColor = null; activeLipId = null;
+            } else {
+                activeLipColor = look.lip; activeLipId = look.id;
+            }
+            refreshSwatches();
+        }
+        function setEyeColor(look) {
+            if (activeEyeId === look.id) {
+                activeEyeColor = null; activeEyeId = null;
+            } else {
+                activeEyeColor = look.eye; activeEyeId = look.id;
+            }
+            refreshSwatches();
+        }
+        function setBlushColor(look) {
+            if (activeBlushId === look.id) {
+                activeBlushColor = null; activeBlushId = null;
+            } else {
+                activeBlushColor = look.blush; activeBlushId = look.id;
+            }
+            refreshSwatches();
+        }
+
+        function refreshSwatches() {
+            document.querySelectorAll('.lip-swatch').forEach(el => el.classList.toggle('active', el.dataset.id === activeLipId));
+            document.querySelectorAll('.eye-swatch').forEach(el => el.classList.toggle('active', el.dataset.id === activeEyeId));
+            document.querySelectorAll('.blush-swatch').forEach(el => el.classList.toggle('active', el.dataset.id === activeBlushId));
         }
 
         // --- MediaPipe 渲染邏輯 ---
@@ -351,11 +476,13 @@
             if (showMakeup && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
                 drawBaseMakeup(landmarks, currentBaseStyle);
-                const eyeColor = currentEyeStyle === 'rose' ? '#A68A8A' : (currentEyeStyle === 'tea' ? '#8C7665' : activeLook.eye);
-                drawNaturalLayer(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], eyeColor, 0.45, 12, 'multiply');
-                drawNaturalLayer(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], eyeColor, 0.45, 12, 'multiply');
-                drawHemeBlush(landmarks, activeLook.blush);
-                drawReshapedLips(landmarks, activeLook.lip);
+                if (activeEyeColor !== null) {
+                    const eyeColor = currentEyeStyle === 'rose' ? '#A68A8A' : (currentEyeStyle === 'tea' ? '#8C7665' : activeEyeColor);
+                    drawNaturalLayer(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], eyeColor, 0.45, 12, 'multiply');
+                    drawNaturalLayer(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], eyeColor, 0.45, 12, 'multiply');
+                }
+                if (activeBlushColor !== null) drawHemeBlush(landmarks, activeBlushColor);
+                if (activeLipColor !== null) drawReshapedLips(landmarks, activeLipColor);
                 if (showGuides) drawProportionGuides(landmarks);
             }
             canvasCtx.restore();
@@ -420,7 +547,7 @@
         }
 
         function drawProportionGuides(landmarks) {
-            canvasCtx.strokeStyle = '#E950A0'; canvasCtx.lineWidth = 0.8; canvasCtx.setLineDash([5, 5]);
+            canvasCtx.strokeStyle = '#1a1a1a'; canvasCtx.lineWidth = 0.8; canvasCtx.setLineDash([5, 5]);
             const lines = [landmarks[10].y, landmarks[168].y, landmarks[2].y, landmarks[152].y];
             lines.forEach(y => { canvasCtx.beginPath(); canvasCtx.moveTo(canvasElement.width * 0.2, y * canvasElement.height); canvasCtx.lineTo(canvasElement.width * 0.8, y * canvasElement.height); canvasCtx.stroke(); });
         }
@@ -443,7 +570,7 @@
         }
 
         function changeUIMode(mode) {
-            ['color', 'base', 'eye', 'shape'].forEach(m => {
+            ['lip', 'eye-color', 'blush', 'base', 'eye', 'shape'].forEach(m => {
                 const el = document.getElementById(`${m}-panel`);
                 if (el) el.style.display = m === mode ? 'block' : 'none';
                 const tab = document.getElementById(`tab-${m}`);
@@ -452,32 +579,53 @@
         }
 
         function setBaseStyle(style) {
+            if (currentBaseStyle === style) {
+                currentBaseStyle = null;
+                document.querySelectorAll('#base-panel .option-btn').forEach(btn => btn.classList.remove('active'));
+                return;
+            }
             currentBaseStyle = style;
             document.querySelectorAll('#base-panel .option-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`base-${style}`).classList.add('active');
         }
-
+        
         function setEyeStyle(style) {
+            if (currentEyeStyle === style) {
+                currentEyeStyle = null;
+                document.querySelectorAll('#eye-panel .option-btn').forEach(btn => btn.classList.remove('active'));
+                return;
+            }
             currentEyeStyle = style;
             document.querySelectorAll('#eye-panel .option-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`eye-${style}`).classList.add('active');
         }
 
         function setLipShape(shape) {
+            if (currentLipShape === shape) {
+                currentLipShape = null;
+                document.querySelectorAll('#shape-panel .option-btn').forEach(btn => btn.classList.remove('active'));
+                return;
+            }
             currentLipShape = shape;
             document.querySelectorAll('#shape-panel .option-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`shape-${shape}`).classList.add('active');
         }
 
         function initUI() {
-            const container = document.getElementById('look-selector');
-            looks.forEach(look => {
-                const item = document.createElement('div');
-                item.className = `flex-shrink-0 cursor-pointer text-center swatch-item ${activeLook.id === look.id ? 'active' : ''}`;
-                item.onclick = () => selectLook(look);
-                item.innerHTML = `<div class="w-14 h-14 rounded-full border border-pink-100 shadow-sm mb-2 swatch-circle mx-auto" style="background: linear-gradient(135deg, ${look.lip} 40%, ${look.eye} 100%)"></div><p class="text-[9px] font-bold text-gray-700">${look.name}</p>`;
-                container.appendChild(item);
-            });
+            function buildSwatch(containerId, cssClass, colorFn, activeFn, activeId) {
+                const container = document.getElementById(containerId);
+                looks.forEach(look => {
+                    const item = document.createElement('div');
+                    item.className = `flex-shrink-0 cursor-pointer text-center swatch-item ${cssClass} ${look.id === activeId ? 'active' : ''}`;
+                    item.dataset.id = look.id;
+                    item.onclick = () => activeFn(look);
+                    item.innerHTML = `<div class="w-14 h-14 rounded-full border border-gray-200 shadow-sm mb-2 swatch-circle mx-auto" style="background:${colorFn(look)}"></div><p class="text-[9px] font-bold text-gray-700">${look.name}</p>`;
+                    container.appendChild(item);
+                });
+            }
+            buildSwatch('lip-selector', 'lip-swatch', l => l.lip, setLipColor, activeLipId);
+            buildSwatch('eye-selector', 'eye-swatch', l => l.eye, setEyeColor, activeEyeId);
+            buildSwatch('blush-selector', 'blush-swatch', l => `radial-gradient(circle, ${l.blush} 0%, ${l.blush}88 100%)`, setBlushColor, activeBlushId);
         }
 
         compareBtn.addEventListener('mousedown', () => showMakeup = false);
@@ -490,3 +638,112 @@
     </script>
 </body>
 </html>
+<script>
+// ── 購物清單資料 ──
+const productCatalog = {
+    lip: {
+        ginger:  { name: '柔薑唇膏', subtitle: 'Velvet Lip Color #01', price: 980, tag: '唇妝' },
+        rose:    { name: '燕麥玫瑰唇膏', subtitle: 'Velvet Lip Color #02', price: 980, tag: '唇妝' },
+        nut:     { name: '烤栗子唇膏', subtitle: 'Velvet Lip Color #03', price: 980, tag: '唇妝' },
+        tea:     { name: '肉桂奶茶唇膏', subtitle: 'Velvet Lip Color #04', price: 980, tag: '唇妝' },
+        berry:   { name: '煙燻莓果唇膏', subtitle: 'Velvet Lip Color #05', price: 980, tag: '唇妝' },
+        honey:   { name: '蜜糖橘唇膏', subtitle: 'Velvet Lip Color #06', price: 980, tag: '唇妝' },
+        cocoa:   { name: '慕斯可可唇膏', subtitle: 'Velvet Lip Color #07', price: 980, tag: '唇妝' },
+    },
+    eye: {
+        ginger:  { name: '柔薑眼影盤', subtitle: 'Shimmer Eye Palette #01', price: 1380, tag: '眼妝' },
+        rose:    { name: '燕麥玫瑰眼影盤', subtitle: 'Shimmer Eye Palette #02', price: 1380, tag: '眼妝' },
+        nut:     { name: '烤栗子眼影盤', subtitle: 'Shimmer Eye Palette #03', price: 1380, tag: '眼妝' },
+        tea:     { name: '肉桂奶茶眼影盤', subtitle: 'Shimmer Eye Palette #04', price: 1380, tag: '眼妝' },
+        berry:   { name: '煙燻莓果眼影盤', subtitle: 'Shimmer Eye Palette #05', price: 1380, tag: '眼妝' },
+        honey:   { name: '蜜糖橘眼影盤', subtitle: 'Shimmer Eye Palette #06', price: 1380, tag: '眼妝' },
+        cocoa:   { name: '慕斯可可眼影盤', subtitle: 'Shimmer Eye Palette #07', price: 1380, tag: '眼妝' },
+    },
+    blush: {
+        ginger:  { name: '柔薑腮紅', subtitle: 'Blush Powder #01', price: 850, tag: '腮紅' },
+        rose:    { name: '燕麥玫瑰腮紅', subtitle: 'Blush Powder #02', price: 850, tag: '腮紅' },
+        nut:     { name: '烤栗子腮紅', subtitle: 'Blush Powder #03', price: 850, tag: '腮紅' },
+        tea:     { name: '肉桂奶茶腮紅', subtitle: 'Blush Powder #04', price: 850, tag: '腮紅' },
+        berry:   { name: '煙燻莓果腮紅', subtitle: 'Blush Powder #05', price: 850, tag: '腮紅' },
+        honey:   { name: '蜜糖橘腮紅', subtitle: 'Blush Powder #06', price: 850, tag: '腮紅' },
+        cocoa:   { name: '慕斯可可腮紅', subtitle: 'Blush Powder #07', price: 850, tag: '腮紅' },
+    },
+    base: {
+        natural: { name: '輕透原生粉底液', subtitle: 'Skin Veil Foundation', price: 1680, tag: '底妝' },
+        matte:   { name: '絲絨柔霧氣墊', subtitle: 'Matte Cushion Foundation', price: 1880, tag: '底妝' },
+        glow:    { name: '貴婦水光精華粉底', subtitle: 'Glow Serum Foundation', price: 2280, tag: '底妝' },
+    },
+    eyeStyle: {
+        daily:   { name: '日常深邃眼線筆', subtitle: 'Daily Liner', price: 680, tag: '眼影' },
+        rose:    { name: '燕麥玫瑰眼影膏', subtitle: 'Rose Eye Gel', price: 780, tag: '眼影' },
+        tea:     { name: '炭焙拿鐵眼影棒', subtitle: 'Tea Latte Eye Stick', price: 780, tag: '眼影' },
+    },
+    lipShape: {
+        natural:   { name: '原生唇形護唇膏', subtitle: 'Natural Lip Balm', price: 480, tag: '唇形' },
+        plump:     { name: '豐盈飽滿唇線筆', subtitle: 'Plump Lip Liner', price: 580, tag: '唇形' },
+        slim:      { name: '清秀精緻唇膜', subtitle: 'Slim Lip Mask', price: 520, tag: '唇形' },
+        'm-shape': { name: 'Ｍ字微笑唇線組', subtitle: 'M-Shape Lip Kit', price: 680, tag: '唇形' },
+    }
+};
+
+function buildCartScreen() {
+    const items = [];
+    if (activeLipId)       items.push({ ...productCatalog.lip[activeLipId],        color: activeLipColor });
+    if (activeEyeId)       items.push({ ...productCatalog.eye[activeEyeId],         color: activeEyeColor });
+    if (activeBlushId)     items.push({ ...productCatalog.blush[activeBlushId],     color: activeBlushColor });
+    if (currentBaseStyle)  items.push({ ...productCatalog.base[currentBaseStyle],   color: '#F5E3D5' });
+    if (currentEyeStyle)   items.push({ ...productCatalog.eyeStyle[currentEyeStyle], color: activeEyeColor || '#8B6A5A' });
+    if (currentLipShape)   items.push({ ...productCatalog.lipShape[currentLipShape], color: activeLipColor || '#A95842' });
+
+    const cartItemsEl = document.getElementById('cart-items');
+    const cartEmptyEl = document.getElementById('cart-empty');
+    const cartSummaryEl = document.getElementById('cart-summary');
+    cartItemsEl.innerHTML = '';
+
+    if (items.length === 0) {
+        cartEmptyEl.style.display = 'flex';
+        cartSummaryEl.classList.add('hidden');
+    } else {
+        cartEmptyEl.style.display = 'none';
+        cartSummaryEl.classList.remove('hidden');
+        let total = 0;
+        items.forEach(item => {
+            total += item.price;
+            const el = document.createElement('div');
+            el.className = 'flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm';
+            el.innerHTML = `
+                <div class="w-14 h-14 rounded-xl flex-shrink-0 shadow-sm" style="background:${item.color || '#ccc'}; opacity:0.85;"></div>
+                <div class="flex-grow min-w-0">
+                    <p class="text-[10px] font-bold tracking-widest text-gray-300 uppercase">${item.tag}</p>
+                    <p class="text-sm font-bold text-[#1a1a1a] mt-0.5 truncate">${item.name}</p>
+                    <p class="text-[10px] text-gray-400 mt-0.5">${item.subtitle}</p>
+                </div>
+                <div class="flex-shrink-0 text-right">
+                    <p class="text-sm font-bold text-[#1a1a1a]">NT$ ${item.price.toLocaleString()}</p>
+                    <p class="text-[9px] text-gray-300 mt-1">× 1</p>
+                </div>
+            `;
+            cartItemsEl.appendChild(el);
+        });
+        document.getElementById('subtotal-price').textContent = 'NT$ ' + total.toLocaleString();
+        document.getElementById('total-price').textContent = 'NT$ ' + total.toLocaleString();
+    }
+}
+
+function showCartScreen() {
+    buildCartScreen();
+    document.querySelector('.max-w-md.mx-auto.min-h-screen').style.display = 'none';
+    const cs = document.getElementById('cart-screen');
+    cs.classList.remove('hidden');
+    cs.scrollTop = 0;
+}
+
+function hideCartScreen() {
+    document.getElementById('cart-screen').classList.add('hidden');
+    document.querySelector('.max-w-md.mx-auto.min-h-screen').style.display = 'flex';
+}
+
+document.getElementById('cart-btn').addEventListener('click', showCartScreen);
+document.getElementById('cart-back-btn').addEventListener('click', hideCartScreen);
+document.getElementById('cart-back-btn2').addEventListener('click', hideCartScreen);
+</script>
