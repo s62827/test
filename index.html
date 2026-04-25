@@ -3,92 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Beauty Try-On - 專題穩定版</title>
+    <title>AI Beauty Try-On Plugin - 完整功能版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #fff; overflow-x: hidden; }
-        .vto-container { aspect-ratio: 3/4; position: relative; overflow: hidden; border-radius: 24px; background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        body { font-family: 'Noto Sans TC', sans-serif; touch-action: manipulation; background-color: #fff; }
+        .vto-container { aspect-ratio: 3/4; position: relative; overflow: hidden; border-radius: 20px; background: #fff; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1); }
         #video-element, #output-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
         .mirror { transform: scaleX(-1); }
         .active-tab { color: #1a1a1a; font-weight: 700; border-bottom: 2px solid #1a1a1a; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .swatch-item.active .swatch-circle { border: 2px solid #1a1a1a; padding: 2px; transform: scale(1.1); background-clip: content-box; }
-        .option-btn { border: 1px solid #eee; padding: 10px; border-radius: 12px; font-size: 11px; transition: 0.2s; background: #fff; }
-        .option-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-        .scan-line { position: absolute; top: 0; width: 100%; height: 2px; background: #1a1a1a; box-shadow: 0 0 15px #1a1a1a; animation: scan 2s linear infinite; display: none; z-index: 20; }
+        .swatch-item.active .swatch-circle { border: 2px solid #1a1a1a; padding: 2px; background-clip: content-box; transform: scale(1.1); }
+        .option-btn { border: 1px solid #F3E8F0; padding: 10px 4px; border-radius: 12px; font-size: 11px; transition: all 0.2s; text-align: center; background: white; }
+        .option-btn.active { background-color: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #1a1a1a; box-shadow: 0 0 15px #1a1a1a; animation: scan 2s linear infinite; display: none; z-index: 20; }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
-<body class="text-gray-600">
+<body class="text-[#5d5d5d]">
 
-    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-2xl relative" id="main-app">
-        
-        <div id="start-screen" class="absolute inset-0 z-[100] bg-white flex flex-col items-center justify-center p-10 text-center transition-all duration-700">
-            <h2 class="text-2xl font-bold text-black tracking-tighter mb-4">AI BEAUTY<br>PERSONAL ADVISOR</h2>
-            <p class="text-xs text-gray-400 mb-12 tracking-widest">智能試妝與個人化推薦系統</p>
-            <button id="init-btn" class="bg-black text-white px-12 py-4 rounded-full font-bold shadow-xl hover:scale-105 transition">開啟智慧鏡頭</button>
+    <div class="max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl relative" id="main-app">
+        <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-[100] bg-white transition-opacity duration-700">
+            <h2 class="text-[#1a1a1a] text-xl font-bold mb-20 tracking-wider uppercase">AI Beauty Try-On Plugin</h2>
+             <div class="bg-stone-50 p-6 rounded-[2rem] text-left mb-10 border border-stone-100 shadow-sm">
+                <p class="text-sm font-bold mb-4 text-stone-800">專題展示說明：</p>
+                <div class="space-y-3 text-xs text-stone-500">
+                    <p>1. 💡 AI 推薦：自動分析膚色並套用最合適色號。</p>
+                    <p>2. 🛒 購物清單：試妝後可將色號加入清單。</p>
+                </div>
+            </div>
+            <button id="init-btn" class="bg-black text-white px-10 py-4 rounded-full text-lg font-bold shadow-lg">開啟鏡頭並開始試妝</button>
         </div>
 
-        <header class="p-6 text-center">
-            <h1 class="text-xs font-black tracking-[0.3em] uppercase text-black">AI Try-On Plugin</h1>
+        <header class="p-5 text-center">
+            <h1 class="text-sm font-bold tracking-[0.2em] uppercase text-[#333]">AI Beauty Try-On Plugin</h1>
+            <p class="text-[9px] text-[#1a1a1a] mt-2 tracking-[0.2em] uppercase font-bold italic">Smart Analysis System</p>
         </header>
 
         <main id="app-content" class="flex-grow px-6 opacity-0 transition-opacity duration-1000 overflow-y-auto pb-10">
-            <div class="vto-container relative">
-                <div id="loading-overlay" class="absolute inset-0 z-50 bg-white flex flex-col items-center justify-center">
-                    <div class="w-6 h-6 border-2 border-gray-100 border-t-black rounded-full animate-spin"></div>
+            <div class="vto-container mt-4 relative">
+                <div id="loading-overlay" class="absolute inset-0 z-50 bg-white/90 flex items-center justify-center">
+                    <div class="w-8 h-8 border-2 border-gray-200 border-t-[#1a1a1a] rounded-full animate-spin"></div>
                 </div>
-
                 <div id="scan-bar" class="scan-line"></div>
                 <video id="video-element" class="mirror" playsinline muted autoplay></video>
                 <canvas id="output-canvas" class="mirror"></canvas>
 
-                <button id="ai-analyze-btn" class="absolute top-4 right-4 z-30 bg-white/90 backdrop-blur p-3 rounded-full shadow-lg border border-gray-100 active:scale-90 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                </button>
+                <div class="absolute top-4 right-4 z-30">
+                    <button id="ai-analyze-btn" class="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg border border-gray-200 flex items-center justify-center group active:scale-90 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </button>
+                </div>
+
+                <div class="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10">
+                    <button id="compare-btn" class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] shadow-sm border border-white active:scale-95 transition">對比</button>
+                    <button id="guide-toggle" class="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#333] text-[9px] shadow-sm border border-white active:scale-95 transition">比例</button>
+                </div>
             </div>
 
-            <div id="ai-result-panel" class="hidden mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 transition-all">
-                <h4 class="text-[10px] font-bold text-black mb-1 uppercase tracking-widest">AI 膚色分析報告</h4>
-                <p id="ai-analysis-text" class="text-xs leading-relaxed text-gray-500 italic">分析中...</p>
+            <div id="ai-result-panel" class="hidden mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+                <h4 class="text-xs font-bold text-gray-800">AI 智能分析報告</h4>
+                <p id="ai-analysis-text" class="text-[10px] text-gray-500 mt-1">正在解析...</p>
             </div>
 
             <div class="mt-6">
-                <div class="flex space-x-6 mb-4 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-50">
-                    <button onclick="changeUIMode('lip')" id="tab-lip" class="pb-2 active-tab whitespace-nowrap">唇妝</button>
-                    <button onclick="changeUIMode('eye')" id="tab-eye" class="pb-2 whitespace-nowrap">眼妝</button>
-                    <button onclick="changeUIMode('blush')" id="tab-blush" class="pb-2 whitespace-nowrap">腮紅</button>
-                    <button onclick="changeUIMode('base')" id="tab-base" class="pb-2 whitespace-nowrap">底妝</button>
+                <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-100">
+                    <button onclick="changeUIMode('lip')" id="tab-lip" class="pb-2 active-tab whitespace-nowrap uppercase">唇妝</button>
+                    <button onclick="changeUIMode('eye-color')" id="tab-eye-color" class="pb-2 whitespace-nowrap uppercase">眼妝</button>
+                    <button onclick="changeUIMode('blush')" id="tab-blush" class="pb-2 whitespace-nowrap uppercase">腮紅</button>
+                    <button onclick="changeUIMode('base')" id="tab-base" class="pb-2 whitespace-nowrap uppercase">底妝</button>
+                    <button onclick="changeUIMode('shape')" id="tab-shape" class="pb-2 whitespace-nowrap uppercase">唇形</button>
                 </div>
 
-                <div class="min-h-[120px]">
-                    <div id="lip-panel" class="block">
-                        <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="lip-selector"></div>
-                    </div>
-                    <div id="eye-panel" class="hidden">
-                        <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="eye-selector"></div>
-                    </div>
-                    <div id="blush-panel" class="hidden">
-                        <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="blush-selector"></div>
-                    </div>
+                <div class="min-h-[140px]">
+                    <div id="lip-panel" class="block"><div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="lip-selector"></div></div>
+                    <div id="eye-color-panel" class="hidden"><div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="eye-selector"></div></div>
+                    <div id="blush-panel" class="hidden"><div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="blush-selector"></div></div>
                     <div id="base-panel" class="hidden grid grid-cols-3 gap-2">
-                        <button onclick="setBaseStyle('natural')" id="base-natural" class="option-btn active">輕透</button>
-                        <button onclick="setBaseStyle('matte')" id="base-matte">柔霧</button>
-                        <button onclick="setBaseStyle('glow')" id="base-glow">水光</button>
+                        <button onclick="setBaseStyle('natural')" id="base-natural" class="option-btn active uppercase">輕透原生</button>
+                        <button onclick="setBaseStyle('matte')" id="base-matte" class="option-btn uppercase">絲絨柔霧</button>
+                        <button onclick="setBaseStyle('glow')" id="base-glow" class="option-btn uppercase">貴婦水光</button>
+                    </div>
+                    <div id="shape-panel" class="hidden grid grid-cols-2 gap-2">
+                        <button onclick="setLipShape('natural')" id="shape-natural" class="option-btn active uppercase">原生唇形</button>
+                        <button onclick="setLipShape('plump')" id="shape-plump" class="option-btn uppercase">豐盈飽滿</button>
                     </div>
                 </div>
             </div>
         </main>
 
         <footer class="p-6">
-            <button id="cart-btn" class="w-full bg-black text-white py-4 rounded-2xl font-bold text-[10px] tracking-[0.2em] shadow-xl">加入購物清單</button>
+            <button id="cart-btn" class="w-full bg-[#1a1a1a] text-white py-4 rounded-xl font-bold text-[11px] tracking-[0.3em] uppercase">加入購物清單</button>
         </footer>
+    </div>
+
+    <div id="cart-screen" class="hidden max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl">
+        <header class="p-5 border-b flex items-center">
+            <button id="cart-back-btn" class="text-xs font-bold">← 返回</button>
+            <h1 class="flex-grow text-center text-sm font-bold tracking-[0.2em]">購物清單</h1>
+        </header>
+        <main class="flex-grow p-6 overflow-y-auto" id="cart-items-container">
+            <div id="cart-items" class="space-y-3"></div>
+        </main>
+        <footer class="p-6 border-t"><button class="w-full bg-black text-white py-4 rounded-xl text-[11px] font-bold">立即結帳</button></footer>
     </div>
 
     <script>
@@ -101,14 +121,14 @@
         const aiText = document.getElementById('ai-analysis-text');
         const scanBar = document.getElementById('scan-bar');
 
-        // 已更換為你的 API Key
+        // 使用你的 API KEY
         const apiKey = "AIzaSyB4q6e7xlc9LFluhpkuzXXdrRfSn4tGPb8"; 
 
         let activeLipColor = null, activeLipId = null;
         let activeEyeColor = null, activeEyeId = null;
         let activeBlushColor = null, activeBlushId = null;
-        let currentBaseStyle = 'natural';
-        let showMakeup = true;
+        let currentBaseStyle = 'natural', currentLipShape = 'natural';
+        let showMakeup = true, showGuides = false;
 
         const looks = [
             { id: 'ginger', name: '柔薑', lip: '#A95842', eye: '#8B6A5A', blush: '#D5A893' },
@@ -118,14 +138,13 @@
             { id: 'berry', name: '莓果', lip: '#8E4B56', eye: '#7A646E', blush: '#B78F98' }
         ];
 
+        // 核心 AI 分析邏輯
         async function performAIAnalysis() {
             try {
-                analyzeBtn.disabled = true;
-                scanBar.style.display = 'block';
+                analyzeBtn.disabled = true; scanBar.style.display = 'block';
                 document.getElementById('ai-result-panel').classList.remove('hidden');
-                aiText.innerText = "智慧掃描中，請保持不動...";
+                aiText.innerText = "正在分析您的專屬色號...";
 
-                // 擷取並壓縮影像
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = 300; tempCanvas.height = 400;
                 tempCanvas.getContext('2d').drawImage(videoElement, 0, 0, 300, 400);
@@ -136,7 +155,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [
-                            { text: "你是彩妝專家。分析圖片人物膚色，從以下 ID 中選一個最合適的推薦: " + JSON.stringify(looks.map(l=>l.id)) + "。請回傳 JSON: {\"skin\":\"...\",\"id\":\"...\",\"reason\":\"...\"}" },
+                            { text: "你是專業彩妝師。分析膚色並從 ID 選一個推薦: " + JSON.stringify(looks.map(l=>l.id)) + "。回傳 JSON: {\"skin\":\"...\",\"id\":\"...\",\"advice\":\"...\"}" },
                             { inlineData: { mimeType: "image/jpeg", data: base64Image } }
                         ] }],
                         generationConfig: { responseMimeType: "application/json" }
@@ -145,46 +164,32 @@
 
                 const result = await response.json();
                 const data = JSON.parse(result.candidates[0].content.parts[0].text);
-                
-                // 自動套用推薦
                 const look = looks.find(l => l.id === data.id) || looks[0];
+                
+                // 自動同步試妝
                 activeLipColor = look.lip; activeLipId = look.id;
                 activeEyeColor = look.eye; activeEyeId = look.id;
                 activeBlushColor = look.blush; activeBlushId = look.id;
                 
-                aiText.innerHTML = `檢測到：<span class="text-black font-bold">${data.skin}</span><br>推薦方案：${look.name}<br><span class="text-[9px]">${data.reason}</span>`;
+                aiText.innerHTML = `膚色檢測：${data.skin}<br>推薦方案：${look.name}<br>${data.advice}`;
                 refreshSwatches();
-
             } catch (e) {
-                console.error(e);
-                aiText.innerText = "分析失敗，請確保光線充足並重試。";
+                aiText.innerText = "分析失敗，請重試。";
             } finally {
-                scanBar.style.display = 'none';
-                analyzeBtn.disabled = false;
+                scanBar.style.display = 'none'; analyzeBtn.disabled = false;
             }
         }
 
         analyzeBtn.addEventListener('click', performAIAnalysis);
 
-        // 介面初始化
-        function initUI() {
-            ['lip', 'eye', 'blush'].forEach(type => {
-                const container = document.getElementById(`${type}-selector`);
-                container.innerHTML = looks.map(l => `
-                    <div class="swatch-item flex-shrink-0 text-center ${type}-swatch" data-id="${l.id}" onclick="selectColor('${type}', '${l.id}')">
-                        <div class="swatch-circle w-12 h-12 rounded-full mx-auto mb-2 border-2 border-transparent" style="background-color: ${l[type === 'lip' ? 'lip' : (type === 'eye' ? 'eye' : 'blush')]}"></div>
-                        <p class="text-[8px]">${l.name}</p>
-                    </div>
-                `).join('');
+        // UI 邏輯
+        function changeUIMode(mode) {
+            ['lip', 'eye-color', 'blush', 'base', 'shape'].forEach(m => {
+                const p = document.getElementById(`${m}-panel`);
+                if (p) p.style.display = (m === mode) ? (m === 'base' || m === 'shape' ? 'grid' : 'block') : 'none';
+                const t = document.getElementById(`tab-${m}`);
+                if (t) t.classList.toggle('active-tab', m === mode);
             });
-        }
-
-        function selectColor(type, id) {
-            const look = looks.find(l => l.id === id);
-            if (type === 'lip') { activeLipColor = look.lip; activeLipId = id; }
-            if (type === 'eye') { activeEyeColor = look.eye; activeEyeId = id; }
-            if (type === 'blush') { activeBlushColor = look.blush; activeBlushId = id; }
-            refreshSwatches();
         }
 
         function refreshSwatches() {
@@ -196,13 +201,12 @@
             });
         }
 
-        function changeUIMode(mode) {
-            ['lip', 'eye', 'blush', 'base'].forEach(m => {
-                const p = document.getElementById(`${m}-panel`);
-                if (p) p.style.display = (m === mode) ? (m === 'base' ? 'grid' : 'block') : 'none';
-                const t = document.getElementById(`tab-${m}`);
-                if (t) t.classList.toggle('active-tab', m === mode);
-            });
+        function selectColor(type, id) {
+            const look = looks.find(l => l.id === id);
+            if (type === 'lip') { activeLipColor = look.lip; activeLipId = id; }
+            if (type === 'eye') { activeEyeColor = look.eye; activeEyeId = id; }
+            if (type === 'blush') { activeBlushColor = look.blush; activeBlushId = id; }
+            refreshSwatches();
         }
 
         function setBaseStyle(s) {
@@ -210,6 +214,12 @@
             document.querySelectorAll('#base-panel button').forEach(b => b.classList.toggle('active', b.id === `base-${s}`));
         }
 
+        function setLipShape(s) {
+            currentLipShape = s;
+            document.querySelectorAll('#shape-panel button').forEach(b => b.classList.toggle('active', b.id === `shape-${s}`));
+        }
+
+        // 渲染邏輯
         function onResults(results) {
             document.getElementById('loading-overlay').style.display = 'none';
             canvasElement.width = videoElement.videoWidth;
@@ -218,10 +228,13 @@
             
             if (showMakeup && results.multiFaceLandmarks?.[0]) {
                 const landmarks = results.multiFaceLandmarks[0];
-                // 簡易渲染示範 (保留你原本的 draw 函式邏輯)
                 if (activeLipColor) {
-                    drawLayer(landmarks, [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191, 78], activeLipColor, 0.5, 5);
-                    drawLayer(landmarks, [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78], activeLipColor, 0.5, 5);
+                    drawPath(landmarks, [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191, 78], activeLipColor, 0.5, 5);
+                    drawPath(landmarks, [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78], activeLipColor, 0.5, 5);
+                }
+                if (activeEyeColor) {
+                    drawPath(landmarks, [226, 247, 30, 29, 27, 28, 56, 190, 243], activeEyeColor, 0.3, 10);
+                    drawPath(landmarks, [463, 414, 286, 258, 257, 259, 260, 467, 446], activeEyeColor, 0.3, 10);
                 }
                 if (activeBlushColor) {
                     [landmarks[205], landmarks[425]].forEach(pt => {
@@ -230,18 +243,30 @@
                         canvasCtx.arc(pt.x * canvasElement.width, pt.y * canvasElement.height, 40, 0, Math.PI*2); canvasCtx.fill();
                     });
                 }
+                if (showGuides) {
+                    canvasCtx.strokeStyle = 'rgba(0,0,0,0.3)'; canvasCtx.setLineDash([5, 5]);
+                    [10, 168, 2, 152].forEach(idx => {
+                        canvasCtx.beginPath(); canvasCtx.moveTo(0, landmarks[idx].y * canvasElement.height);
+                        canvasCtx.lineTo(canvasElement.width, landmarks[idx].y * canvasElement.height); canvasCtx.stroke();
+                    });
+                }
             }
         }
 
-        function drawLayer(landmarks, indices, color, alpha, blur) {
+        function drawPath(landmarks, indices, color, alpha, blur) {
             canvasCtx.save(); canvasCtx.globalAlpha = alpha; canvasCtx.filter = `blur(${blur}px)`;
             canvasCtx.fillStyle = color; canvasCtx.beginPath();
-            const pts = indices.map(i => landmarks[i]);
+            const pts = indices.map(i => {
+                let p = { ...landmarks[i] };
+                if (currentLipShape === 'plump' && indices.includes(17)) p.y += 0.01;
+                return p;
+            });
             canvasCtx.moveTo(pts[0].x * canvasElement.width, pts[0].y * canvasElement.height);
             pts.forEach(p => canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height));
             canvasCtx.fill(); canvasCtx.restore();
         }
 
+        // 初始化與按鈕事件
         initBtn.addEventListener('click', () => {
             startScreen.style.opacity = '0'; appContent.style.opacity = '1';
             setTimeout(() => {
@@ -253,7 +278,36 @@
             }, 700);
         });
 
-        initUI();
+        document.getElementById('cart-btn').addEventListener('click', () => {
+            const items = [];
+            if (activeLipId) items.push({ type: '唇妝', name: looks.find(l=>l.id===activeLipId).name });
+            if (activeEyeId) items.push({ type: '眼妝', name: looks.find(l=>l.id===activeEyeId).name });
+            if (activeBlushId) items.push({ type: '腮紅', name: looks.find(l=>l.id===activeBlushId).name });
+            
+            document.getElementById('cart-items').innerHTML = items.length ? items.map(i => `<div class="p-4 bg-gray-50 rounded-xl flex justify-between"><span class="text-xs font-bold">${i.type}</span><span class="text-xs">${i.name}</span></div>`).join('') : '<p class="text-center text-xs text-gray-400">清單為空</p>';
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('cart-screen').classList.remove('hidden');
+        });
+
+        document.getElementById('cart-back-btn').addEventListener('click', () => {
+            document.getElementById('cart-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+        });
+
+        compareBtn.addEventListener('mousedown', () => showMakeup = false);
+        compareBtn.addEventListener('mouseup', () => showMakeup = true);
+        document.getElementById('guide-toggle').addEventListener('click', () => showGuides = !showGuides);
+
+        // 生成色票
+        ['lip', 'eye', 'blush'].forEach(type => {
+            const container = document.getElementById(`${type === 'eye' ? 'eye' : type}-selector`);
+            container.innerHTML = looks.map(l => `
+                <div class="swatch-item flex-shrink-0 text-center ${type}-swatch" data-id="${l.id}" onclick="selectColor('${type}', '${l.id}')">
+                    <div class="swatch-circle w-12 h-12 rounded-full mx-auto mb-2" style="background-color: ${l[type === 'eye' ? 'eye' : type]}"></div>
+                    <p class="text-[8px]">${l.name}</p>
+                </div>
+            `).join('');
+        });
     </script>
 </body>
 </html>
