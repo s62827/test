@@ -19,8 +19,6 @@
         .swatch-scroll-wrap::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 32px; background: linear-gradient(to right, transparent, white); pointer-events: none; }
         .no-scrollbar { -webkit-overflow-scrolling: touch; }
         .swatch-item.active .swatch-circle { border: 2px solid #1a1a1a; padding: 2px; background-clip: content-box; transform: scale(1.1); }
-        .option-btn { border: 1px solid #F3E8F0; padding: 10px 4px; border-radius: 12px; font-size: 11px; transition: all 0.2s; text-align: center; background: white; }
-        .option-btn.active { background-color: #1a1a1a; color: #fff; border-color: #1a1a1a; }
         #start-screen { background-color: #fff; z-index: 100; }
         .btn-primary { background-color: #1a1a1a; transition: transform 0.2s ease; }
         .btn-primary:active { transform: scale(0.95); }
@@ -92,8 +90,8 @@
         <div class="mt-6">
             <div class="flex space-x-5 mb-5 text-gray-400 text-[10px] tracking-widest overflow-x-auto no-scrollbar border-b border-gray-100">
                 <button onclick="changeUIMode('lip')" id="tab-lip" class="pb-2 active-tab whitespace-nowrap uppercase">唇妝</button>
-                <button onclick="changeUIMode('base')" id="tab-base" class="pb-2 whitespace-nowrap uppercase">底妝質感</button>
-                <button onclick="changeUIMode('eye')" id="tab-eye" class="pb-2 whitespace-nowrap uppercase">眼影效果</button>
+                <button onclick="changeUIMode('eye')" id="tab-eye" class="pb-2 whitespace-nowrap uppercase">眼妝</button>
+                <button onclick="changeUIMode('base')" id="tab-base" class="pb-2 whitespace-nowrap uppercase">底妝</button>
             </div>
             <div class="min-h-[140px]">
                 <div id="lip-panel" class="block">
@@ -101,18 +99,14 @@
                         <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="lip-selector" style="flex-wrap:nowrap; min-width:0;"></div>
                     </div>
                 </div>
-                <div id="base-panel" class="hidden">
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setBaseStyle('natural')" id="base-natural" class="option-btn active uppercase">輕透原生</button>
-                        <button onclick="setBaseStyle('matte')" id="base-matte" class="option-btn uppercase">絲絨柔霧</button>
-                        <button onclick="setBaseStyle('glow')" id="base-glow" class="option-btn uppercase">貴婦水光</button>
+                <div id="eye-panel" class="hidden">
+                    <div class="swatch-scroll-wrap">
+                        <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="eye-selector" style="flex-wrap:nowrap; min-width:0;"></div>
                     </div>
                 </div>
-                <div id="eye-panel" class="hidden">
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setEyeStyle('daily')" id="eye-daily" class="option-btn active uppercase">日常深邃</button>
-                        <button onclick="setEyeStyle('rose')" id="eye-rose" class="option-btn uppercase">燕麥玫瑰</button>
-                        <button onclick="setEyeStyle('tea')" id="eye-tea" class="option-btn uppercase">炭焙拿鐵</button>
+                <div id="base-panel" class="hidden">
+                    <div class="swatch-scroll-wrap">
+                        <div class="flex space-x-4 overflow-x-auto pb-4 no-scrollbar" id="base-selector" style="flex-wrap:nowrap; min-width:0;"></div>
                     </div>
                 </div>
             </div>
@@ -160,42 +154,63 @@
 </div>
 
 <script>
-    const videoElement   = document.getElementById('video-element');
-    const canvasElement  = document.getElementById('output-canvas');
-    const canvasCtx      = canvasElement.getContext('2d');
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const startScreen    = document.getElementById('start-screen');
-    const appContent     = document.getElementById('app-content');
-    const initBtn        = document.getElementById('init-btn');
-    const compareBtn     = document.getElementById('compare-btn');
-    const analyzeBtn     = document.getElementById('ai-analyze-btn');
-    const scanBar        = document.getElementById('scan-bar');
-    const aiPanel        = document.getElementById('ai-result-panel');
-    const aiText         = document.getElementById('ai-analysis-text');
+    var videoElement   = document.getElementById('video-element');
+    var canvasElement  = document.getElementById('output-canvas');
+    var canvasCtx      = canvasElement.getContext('2d');
+    var loadingOverlay = document.getElementById('loading-overlay');
+    var startScreen    = document.getElementById('start-screen');
+    var appContent     = document.getElementById('app-content');
+    var initBtn        = document.getElementById('init-btn');
+    var compareBtn     = document.getElementById('compare-btn');
+    var analyzeBtn     = document.getElementById('ai-analyze-btn');
+    var scanBar        = document.getElementById('scan-bar');
+    var aiPanel        = document.getElementById('ai-result-panel');
+    var aiText         = document.getElementById('ai-analysis-text');
 
-    const apiKey = "AIzaSyB4q6e7xlc9LFluhpkuzXXdrRfSn4tGPb8";
+    var apiKey = "AIzaSyB4q6e7xlc9LFluhpkuzXXdrRfSn4tGPb8";
 
-    let currentBaseStyle = 'natural';
-    let currentEyeStyle  = 'daily';
-    let showMakeup = true;
-    let showGuides = false;
+    var showMakeup = true;
+    var showGuides = false;
 
-    const looks = [
-        { id: 'ginger', name: '01 柔薑',     lip: '#A95842', eye: '#8B6A5A', blush: '#D5A893' },
-        { id: 'rose',   name: '02 燕麥玫瑰', lip: '#B25F60', eye: '#967A7A', blush: '#C89B9B' },
-        { id: 'nut',    name: '03 烤栗子',   lip: '#8B4232', eye: '#7A5E4E', blush: '#B88F7F' },
-        { id: 'tea',    name: '04 肉桂奶茶', lip: '#B26D57', eye: '#917869', blush: '#D2AF9D' },
-        { id: 'berry',  name: '05 煙燻莓果', lip: '#8E4B56', eye: '#7A646E', blush: '#B78F98' },
-        { id: 'honey',  name: '06 蜜糖橘',   lip: '#C26949', eye: '#A68364', blush: '#E5B198' },
-        { id: 'cocoa',  name: '07 慕斯可可', lip: '#6D3D32', eye: '#665248', blush: '#A38475' }
+    // ── 唇妝色票（熱門唇色）
+    var lipColors = [
+        { id: 'l1', name: '玫瑰裸粉', color: '#C8847A', price: 980,  subtitle: 'Rose Nude' },
+        { id: 'l2', name: '豆沙磚紅', color: '#A0514A', price: 980,  subtitle: 'Brick Rose' },
+        { id: 'l3', name: '奶茶橘棕', color: '#B8795A', price: 980,  subtitle: 'Latte Brown' },
+        { id: 'l4', name: '莓果紫紅', color: '#8B3A52', price: 980,  subtitle: 'Berry Mauve' },
+        { id: 'l5', name: '珊瑚橘紅', color: '#C96448', price: 980,  subtitle: 'Coral Red' },
+        { id: 'l6', name: '霧感正紅', color: '#B03030', price: 980,  subtitle: 'Matte Red' },
+        { id: 'l7', name: '乾燥玫瑰', color: '#9E6060', price: 980,  subtitle: 'Dry Rose' }
     ];
 
-    let activeLipColor = null;
-    let activeLipId    = null;
+    // ── 眼妝色票（熱門眼影色）
+    var eyeColors = [
+        { id: 'e1', name: '大地棕',   color: '#8B6A5A', price: 1380, subtitle: 'Warm Earth' },
+        { id: 'e2', name: '玫瑰粉棕', color: '#967A7A', price: 1380, subtitle: 'Rose Brown' },
+        { id: 'e3', name: '煙燻灰',   color: '#6A6A7A', price: 1380, subtitle: 'Smoky Gray' },
+        { id: 'e4', name: '奶油可可', color: '#7A5E4E', price: 1380, subtitle: 'Cocoa Cream' },
+        { id: 'e5', name: '香檳金',   color: '#C4A882', price: 1380, subtitle: 'Champagne' },
+        { id: 'e6', name: '焦糖棕',   color: '#A07850', price: 1380, subtitle: 'Caramel' },
+        { id: 'e7', name: '霧感橄欖', color: '#7A7A5A', price: 1380, subtitle: 'Olive Mist' }
+    ];
 
-    const UPPER_LIP = [61,185,40,39,37,0,267,269,270,409,291,308,415,310,311,312,13,82,81,80,191,78];
-    const LOWER_LIP = [61,146,91,181,84,17,314,405,321,375,291,308,324,318,402,317,14,87,178,88,95,78];
-    const FACE_OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+    // ── 底妝色票（常見膚色號）
+    var baseColors = [
+        { id: 'b1', name: '瓷白 10',  color: '#F5E8DC', price: 1680, subtitle: 'Porcelain 10' },
+        { id: 'b2', name: '自然 20',  color: '#EDD9C0', price: 1680, subtitle: 'Natural 20' },
+        { id: 'b3', name: '米膚 30',  color: '#E2C9A8', price: 1680, subtitle: 'Warm Beige 30' },
+        { id: 'b4', name: '蜜糖 40',  color: '#D4B48C', price: 1680, subtitle: 'Honey 40' },
+        { id: 'b5', name: '小麥 50',  color: '#C4A070', price: 1680, subtitle: 'Wheat 50' },
+        { id: 'b6', name: '健康 60',  color: '#B08A58', price: 1680, subtitle: 'Bronze 60' }
+    ];
+
+    var activeLipColor = null; var activeLipId = null;
+    var activeEyeColor = null; var activeEyeId = null;
+    var activeBaseColor = null; var activeBaseId = null;
+
+    var UPPER_LIP = [61,185,40,39,37,0,267,269,270,409,291,308,415,310,311,312,13,82,81,80,191,78];
+    var LOWER_LIP = [61,146,91,181,84,17,314,405,321,375,291,308,324,318,402,317,14,87,178,88,95,78];
+    var FACE_OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
 
     function tryExtractJson(text) {
         try { return JSON.parse(text); } catch(e) {
@@ -221,10 +236,12 @@
             tempCtx.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
             var base64Image = tempCanvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
-            var lookList = JSON.stringify(looks.map(function(l){ return {id: l.id, name: l.name}; }));
-            var systemPrompt = "You are a professional makeup AI. Analyze the skin tone and face shape of the user. Pick ONE ideal color from this list: " + lookList + ". Return ONLY a JSON object with keys: skin_tone, face_shape, recommended_id, advice. No markdown, no extra text.";
+            var lipList  = JSON.stringify(lipColors.map(function(l){ return {id: l.id, name: l.name}; }));
+            var eyeList  = JSON.stringify(eyeColors.map(function(l){ return {id: l.id, name: l.name}; }));
+            var baseList = JSON.stringify(baseColors.map(function(l){ return {id: l.id, name: l.name}; }));
+            var systemPrompt = "You are a professional makeup AI. Analyze the user's skin tone and face. Pick ONE from each list. Lip list: " + lipList + ". Eye list: " + eyeList + ". Base list: " + baseList + ". Return ONLY JSON with keys: skin_tone, face_shape, recommended_lip_id, recommended_eye_id, recommended_base_id, advice. No markdown, no extra text.";
 
-            var retries  = 0;
+            var retries = 0;
             var finalData = null;
 
             while (retries < 3 && !finalData) {
@@ -235,7 +252,7 @@
                         body: JSON.stringify({
                             systemInstruction: { parts: [{ text: systemPrompt }] },
                             contents: [{ parts: [
-                                { text: "Please analyze my face features and recommend a makeup look. Return only JSON." },
+                                { text: "Analyze my face and recommend colors. Return only JSON." },
                                 { inlineData: { mimeType: "image/jpeg", data: base64Image } }
                             ]}],
                             generationConfig: { temperature: 0.1, maxOutputTokens: 300 }
@@ -249,12 +266,12 @@
                             await new Promise(function(r){ setTimeout(r, 2000 * retries); });
                             continue;
                         }
-                        throw new Error("API 錯誤 " + response.status);
+                        throw new Error("API error " + response.status);
                     }
 
                     var result = await response.json();
-                    var text   = result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
-                    if (text) { finalData = tryExtractJson(text); if (finalData) break; }
+                    var txt = result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
+                    if (txt) { finalData = tryExtractJson(txt); if (finalData) break; }
                     retries++;
                 } catch(e) {
                     retries++;
@@ -264,17 +281,20 @@
 
             if (!finalData) throw new Error("解析失敗，請重試");
 
-            var recommendedLook = null;
-            for (var i = 0; i < looks.length; i++) {
-                if (looks[i].id === finalData.recommended_id) { recommendedLook = looks[i]; break; }
-            }
-            if (!recommendedLook) recommendedLook = looks[0];
+            var rLip  = null; var rEye = null; var rBase = null;
+            for (var i = 0; i < lipColors.length;  i++) { if (lipColors[i].id  === finalData.recommended_lip_id)  { rLip  = lipColors[i];  break; } }
+            for (var i = 0; i < eyeColors.length;  i++) { if (eyeColors[i].id  === finalData.recommended_eye_id)  { rEye  = eyeColors[i];  break; } }
+            for (var i = 0; i < baseColors.length; i++) { if (baseColors[i].id === finalData.recommended_base_id) { rBase = baseColors[i]; break; } }
+            if (!rLip)  rLip  = lipColors[0];
+            if (!rEye)  rEye  = eyeColors[0];
+            if (!rBase) rBase = baseColors[0];
 
-            activeLipColor = recommendedLook.lip;
-            activeLipId    = recommendedLook.id;
-            refreshSwatches();
+            activeLipColor  = rLip.color;  activeLipId  = rLip.id;
+            activeEyeColor  = rEye.color;  activeEyeId  = rEye.id;
+            activeBaseColor = rBase.color; activeBaseId = rBase.id;
+            refreshAllSwatches();
 
-            aiText.innerHTML = "<strong>" + finalData.skin_tone + "</strong> | 臉型：" + finalData.face_shape + "<br>建議：" + finalData.advice + "<br><span style='color:#1a1a1a;font-weight:700'>為您推薦：" + recommendedLook.name + "</span>";
+            aiText.innerHTML = "<strong>" + finalData.skin_tone + "</strong> | " + finalData.face_shape + "<br>" + finalData.advice + "<br><span style='color:#1a1a1a;font-weight:700'>唇：" + rLip.name + " / 眼：" + rEye.name + " / 底：" + rBase.name + "</span>";
 
         } catch(error) {
             aiText.innerText = "分析失敗：" + error.message;
@@ -286,16 +306,26 @@
 
     analyzeBtn.addEventListener('click', performAIAnalysis);
 
-    function setLipColor(look) {
-        if (activeLipId === look.id) { activeLipColor = null; activeLipId = null; }
-        else { activeLipColor = look.lip; activeLipId = look.id; }
-        refreshSwatches();
+    function setLipColor(item) {
+        if (activeLipId === item.id) { activeLipColor = null; activeLipId = null; }
+        else { activeLipColor = item.color; activeLipId = item.id; }
+        refreshAllSwatches();
+    }
+    function setEyeColor(item) {
+        if (activeEyeId === item.id) { activeEyeColor = null; activeEyeId = null; }
+        else { activeEyeColor = item.color; activeEyeId = item.id; }
+        refreshAllSwatches();
+    }
+    function setBaseColor(item) {
+        if (activeBaseId === item.id) { activeBaseColor = null; activeBaseId = null; }
+        else { activeBaseColor = item.color; activeBaseId = item.id; }
+        refreshAllSwatches();
     }
 
-    function refreshSwatches() {
-        document.querySelectorAll('.lip-swatch').forEach(function(el){
-            el.classList.toggle('active', el.dataset.id === activeLipId);
-        });
+    function refreshAllSwatches() {
+        document.querySelectorAll('.lip-swatch').forEach(function(el){ el.classList.toggle('active', el.dataset.id === activeLipId); });
+        document.querySelectorAll('.eye-swatch').forEach(function(el){ el.classList.toggle('active', el.dataset.id === activeEyeId); });
+        document.querySelectorAll('.base-swatch').forEach(function(el){ el.classList.toggle('active', el.dataset.id === activeBaseId); });
     }
 
     function onResults(results) {
@@ -313,47 +343,35 @@
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         if (showMakeup && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
             var landmarks = results.multiFaceLandmarks[0];
-            drawBaseMakeup(landmarks, currentBaseStyle);
-            var eyeColor = currentEyeStyle === 'rose' ? '#A68A8A' : (currentEyeStyle === 'tea' ? '#8C7665' : '#8B6A5A');
-            drawNaturalLayer(landmarks, [226,247,30,29,27,28,56,190,243],     eyeColor, 0.45, 12, 'multiply');
-            drawNaturalLayer(landmarks, [463,414,286,258,257,259,260,467,446], eyeColor, 0.45, 12, 'multiply');
-            if (activeLipColor) drawLips(landmarks, activeLipColor);
-            if (showGuides) drawProportionGuides(landmarks);
+            if (activeBaseColor) drawBase(landmarks, activeBaseColor);
+            if (activeEyeColor)  drawEye(landmarks, activeEyeColor);
+            if (activeLipColor)  drawLips(landmarks, activeLipColor);
+            if (showGuides)      drawProportionGuides(landmarks);
         }
         canvasCtx.restore();
     }
 
-    function drawBaseMakeup(landmarks, style) {
-        if (style === 'natural') return;
+    function drawBase(landmarks, color) {
         canvasCtx.save();
         var ovalPoints = FACE_OVAL.map(function(idx){ return landmarks[idx]; });
-        if (style === 'matte') {
-            canvasCtx.globalCompositeOperation = 'multiply';
-            canvasCtx.globalAlpha = 0.08;
-            canvasCtx.fillStyle = '#F5E3D5';
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(ovalPoints[0].x * canvasElement.width, ovalPoints[0].y * canvasElement.height);
-            ovalPoints.forEach(function(p){ canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height); });
-            canvasCtx.fill();
-        } else if (style === 'glow') {
-            [1,4,168].forEach(function(idx){
-                var pt   = landmarks[idx];
-                var grad = canvasCtx.createRadialGradient(pt.x*canvasElement.width, pt.y*canvasElement.height, 0, pt.x*canvasElement.width, pt.y*canvasElement.height, 40);
-                grad.addColorStop(0, 'rgba(255,255,255,0.15)');
-                grad.addColorStop(1, 'transparent');
-                canvasCtx.fillStyle = grad;
-                canvasCtx.globalCompositeOperation = 'screen';
-                canvasCtx.beginPath();
-                canvasCtx.arc(pt.x*canvasElement.width, pt.y*canvasElement.height, 40, 0, Math.PI*2);
-                canvasCtx.fill();
-            });
-        }
+        canvasCtx.globalCompositeOperation = 'multiply';
+        canvasCtx.globalAlpha = 0.15;
+        canvasCtx.fillStyle = color;
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(ovalPoints[0].x * canvasElement.width, ovalPoints[0].y * canvasElement.height);
+        ovalPoints.forEach(function(p){ canvasCtx.lineTo(p.x * canvasElement.width, p.y * canvasElement.height); });
+        canvasCtx.fill();
         canvasCtx.restore();
+    }
+
+    function drawEye(landmarks, color) {
+        drawNaturalLayer(landmarks, [226,247,30,29,27,28,56,190,243],     color, 0.45, 12, 'multiply');
+        drawNaturalLayer(landmarks, [463,414,286,258,257,259,260,467,446], color, 0.45, 12, 'multiply');
     }
 
     function drawLips(landmarks, color) {
-        drawPath(UPPER_LIP.map(function(idx){ return landmarks[idx]; }), color, 0.4, 8, 'multiply');
-        drawPath(LOWER_LIP.map(function(idx){ return landmarks[idx]; }), color, 0.4, 8, 'multiply');
+        drawPath(UPPER_LIP.map(function(idx){ return landmarks[idx]; }), color, 0.45, 8, 'multiply');
+        drawPath(LOWER_LIP.map(function(idx){ return landmarks[idx]; }), color, 0.45, 8, 'multiply');
     }
 
     function drawPath(points, color, alpha, blur, composite) {
@@ -375,9 +393,7 @@
     }
 
     function drawProportionGuides(landmarks) {
-        canvasCtx.strokeStyle = '#1a1a1a';
-        canvasCtx.lineWidth = 0.8;
-        canvasCtx.setLineDash([5,5]);
+        canvasCtx.strokeStyle = '#1a1a1a'; canvasCtx.lineWidth = 0.8; canvasCtx.setLineDash([5,5]);
         [landmarks[10].y, landmarks[168].y, landmarks[2].y, landmarks[152].y].forEach(function(y){
             canvasCtx.beginPath();
             canvasCtx.moveTo(canvasElement.width * 0.2, y * canvasElement.height);
@@ -387,12 +403,8 @@
     }
 
     initBtn.addEventListener('click', async function() {
-        try {
-            await navigator.mediaDevices.getUserMedia({ video: true });
-        } catch(e) {
-            alert('請允許瀏覽器存取鏡頭，並重新整理頁面');
-            return;
-        }
+        try { await navigator.mediaDevices.getUserMedia({ video: true }); }
+        catch(e) { alert('請允許瀏覽器存取鏡頭，並重新整理頁面'); return; }
         startScreen.style.opacity = '0';
         appContent.style.opacity  = '1';
         setTimeout(function(){ startScreen.style.display = 'none'; startCamera(); }, 700);
@@ -410,7 +422,7 @@
     }
 
     function changeUIMode(mode) {
-        ['lip','base','eye'].forEach(function(m){
+        ['lip','eye','base'].forEach(function(m){
             var el  = document.getElementById(m + '-panel');
             var tab = document.getElementById('tab-' + m);
             if (el)  el.style.display = (m === mode) ? 'block' : 'none';
@@ -418,37 +430,18 @@
         });
     }
 
-    function setBaseStyle(style) {
-        if (currentBaseStyle === style) {
-            currentBaseStyle = null;
-            document.querySelectorAll('#base-panel .option-btn').forEach(function(b){ b.classList.remove('active'); });
-            return;
-        }
-        currentBaseStyle = style;
-        document.querySelectorAll('#base-panel .option-btn').forEach(function(b){ b.classList.remove('active'); });
-        document.getElementById('base-' + style).classList.add('active');
-    }
-
-    function setEyeStyle(style) {
-        if (currentEyeStyle === style) {
-            currentEyeStyle = null;
-            document.querySelectorAll('#eye-panel .option-btn').forEach(function(b){ b.classList.remove('active'); });
-            return;
-        }
-        currentEyeStyle = style;
-        document.querySelectorAll('#eye-panel .option-btn').forEach(function(b){ b.classList.remove('active'); });
-        document.getElementById('eye-' + style).classList.add('active');
-    }
-
-    function initUI() {
-        var container = document.getElementById('lip-selector');
-        looks.forEach(function(look){
-            var item = document.createElement('div');
-            item.className   = 'flex-shrink-0 cursor-pointer text-center swatch-item lip-swatch';
-            item.dataset.id  = look.id;
-            item.onclick     = function(){ setLipColor(look); };
-            item.innerHTML   = '<div class="w-14 h-14 rounded-full border border-gray-200 shadow-sm mb-2 swatch-circle mx-auto" style="background:' + look.lip + '"></div><p class="text-[9px] font-bold text-gray-700">' + look.name + '</p>';
-            container.appendChild(item);
+    function buildSwatch(containerId, cssClass, items, clickFn) {
+        var container = document.getElementById(containerId);
+        items.forEach(function(item){
+            var el = document.createElement('div');
+            el.className  = 'flex-shrink-0 cursor-pointer text-center swatch-item ' + cssClass;
+            el.dataset.id = item.id;
+            el.onclick    = function(){ clickFn(item); };
+            el.innerHTML  =
+                '<div class="w-14 h-14 rounded-full border border-gray-200 shadow-sm mb-2 swatch-circle mx-auto" style="background:' + item.color + '"></div>' +
+                '<p class="text-[9px] font-bold text-gray-700">' + item.name + '</p>' +
+                '<p class="text-[8px] text-gray-400">' + item.subtitle + '</p>';
+            container.appendChild(el);
         });
     }
 
@@ -458,37 +451,46 @@
     compareBtn.addEventListener('touchend',   function(){ showMakeup = true; });
     document.getElementById('guide-toggle').addEventListener('click', function(){ showGuides = !showGuides; });
 
-    initUI();
+    buildSwatch('lip-selector',  'lip-swatch',  lipColors,  setLipColor);
+    buildSwatch('eye-selector',  'eye-swatch',  eyeColors,  setEyeColor);
+    buildSwatch('base-selector', 'base-swatch', baseColors, setBaseColor);
 </script>
 
 <script>
     var productCatalog = {
         lip: {
-            ginger: { name: '柔薑唇膏',     subtitle: 'Velvet Lip Color #01', price: 980,  tag: '唇妝' },
-            rose:   { name: '燕麥玫瑰唇膏', subtitle: 'Velvet Lip Color #02', price: 980,  tag: '唇妝' },
-            nut:    { name: '烤栗子唇膏',   subtitle: 'Velvet Lip Color #03', price: 980,  tag: '唇妝' },
-            tea:    { name: '肉桂奶茶唇膏', subtitle: 'Velvet Lip Color #04', price: 980,  tag: '唇妝' },
-            berry:  { name: '煙燻莓果唇膏', subtitle: 'Velvet Lip Color #05', price: 980,  tag: '唇妝' },
-            honey:  { name: '蜜糖橘唇膏',   subtitle: 'Velvet Lip Color #06', price: 980,  tag: '唇妝' },
-            cocoa:  { name: '慕斯可可唇膏', subtitle: 'Velvet Lip Color #07', price: 980,  tag: '唇妝' }
+            l1: { name: '玫瑰裸粉唇膏', subtitle: 'Rose Nude',    price: 980,  tag: '唇妝' },
+            l2: { name: '豆沙磚紅唇膏', subtitle: 'Brick Rose',   price: 980,  tag: '唇妝' },
+            l3: { name: '奶茶橘棕唇膏', subtitle: 'Latte Brown',  price: 980,  tag: '唇妝' },
+            l4: { name: '莓果紫紅唇膏', subtitle: 'Berry Mauve',  price: 980,  tag: '唇妝' },
+            l5: { name: '珊瑚橘紅唇膏', subtitle: 'Coral Red',    price: 980,  tag: '唇妝' },
+            l6: { name: '霧感正紅唇膏', subtitle: 'Matte Red',    price: 980,  tag: '唇妝' },
+            l7: { name: '乾燥玫瑰唇膏', subtitle: 'Dry Rose',     price: 980,  tag: '唇妝' }
+        },
+        eye: {
+            e1: { name: '大地棕眼影盤',   subtitle: 'Warm Earth',   price: 1380, tag: '眼妝' },
+            e2: { name: '玫瑰粉棕眼影盤', subtitle: 'Rose Brown',   price: 1380, tag: '眼妝' },
+            e3: { name: '煙燻灰眼影盤',   subtitle: 'Smoky Gray',   price: 1380, tag: '眼妝' },
+            e4: { name: '奶油可可眼影盤', subtitle: 'Cocoa Cream',  price: 1380, tag: '眼妝' },
+            e5: { name: '香檳金眼影盤',   subtitle: 'Champagne',    price: 1380, tag: '眼妝' },
+            e6: { name: '焦糖棕眼影盤',   subtitle: 'Caramel',      price: 1380, tag: '眼妝' },
+            e7: { name: '霧感橄欖眼影盤', subtitle: 'Olive Mist',   price: 1380, tag: '眼妝' }
         },
         base: {
-            natural: { name: '輕透原生粉底液',   subtitle: 'Skin Veil Foundation',     price: 1680, tag: '底妝' },
-            matte:   { name: '絲絨柔霧氣墊',     subtitle: 'Matte Cushion Foundation', price: 1880, tag: '底妝' },
-            glow:    { name: '貴婦水光精華粉底', subtitle: 'Glow Serum Foundation',    price: 2280, tag: '底妝' }
-        },
-        eyeStyle: {
-            daily: { name: '日常深邃眼線筆', subtitle: 'Daily Liner',         price: 680, tag: '眼影' },
-            rose:  { name: '燕麥玫瑰眼影膏', subtitle: 'Rose Eye Gel',        price: 780, tag: '眼影' },
-            tea:   { name: '炭焙拿鐵眼影棒', subtitle: 'Tea Latte Eye Stick', price: 780, tag: '眼影' }
+            b1: { name: '瓷白 10 粉底液', subtitle: 'Porcelain 10',  price: 1680, tag: '底妝' },
+            b2: { name: '自然 20 粉底液', subtitle: 'Natural 20',    price: 1680, tag: '底妝' },
+            b3: { name: '米膚 30 粉底液', subtitle: 'Warm Beige 30', price: 1680, tag: '底妝' },
+            b4: { name: '蜜糖 40 粉底液', subtitle: 'Honey 40',      price: 1680, tag: '底妝' },
+            b5: { name: '小麥 50 粉底液', subtitle: 'Wheat 50',      price: 1680, tag: '底妝' },
+            b6: { name: '健康 60 粉底液', subtitle: 'Bronze 60',     price: 1680, tag: '底妝' }
         }
     };
 
     function buildCartScreen() {
         var items = [];
-        if (activeLipId)      items.push(Object.assign({}, productCatalog.lip[activeLipId],          { color: activeLipColor }));
-        if (currentBaseStyle) items.push(Object.assign({}, productCatalog.base[currentBaseStyle],     { color: '#F5E3D5' }));
-        if (currentEyeStyle)  items.push(Object.assign({}, productCatalog.eyeStyle[currentEyeStyle], { color: '#8B6A5A' }));
+        if (activeLipId)  items.push(Object.assign({}, productCatalog.lip[activeLipId],   { color: activeLipColor }));
+        if (activeEyeId)  items.push(Object.assign({}, productCatalog.eye[activeEyeId],   { color: activeEyeColor }));
+        if (activeBaseId) items.push(Object.assign({}, productCatalog.base[activeBaseId],  { color: activeBaseColor }));
 
         var cartItemsEl   = document.getElementById('cart-items');
         var cartEmptyEl   = document.getElementById('cart-empty');
