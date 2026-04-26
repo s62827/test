@@ -168,51 +168,72 @@
     var aiText         = document.getElementById('ai-analysis-text');
 
     var apiKey = "AIzaSyB4q6e7xlc9LFluhpkuzXXdrRfSn4tGPb8";
-
     var showMakeup = true;
     var showGuides = false;
 
     var lipColors = [
-        { id: 'l1', name: '玫瑰裸粉', color: '#C8847A', price: 360,  subtitle: 'Rose Nude' },
-        { id: 'l2', name: '豆沙磚紅', color: '#A0514A', price: 360,  subtitle: 'Brick Rose' },
-        { id: 'l3', name: '奶茶橘棕', color: '#B8795A', price: 360,  subtitle: 'Latte Brown' },
-        { id: 'l4', name: '莓果紫紅', color: '#8B3A52', price: 390,  subtitle: 'Berry Mauve' },
-        { id: 'l5', name: '珊瑚橘紅', color: '#C96448', price: 360,  subtitle: 'Coral Red' },
-        { id: 'l6', name: '霧感正紅', color: '#B03030', price: 390,  subtitle: 'Matte Red' },
-        { id: 'l7', name: '乾燥玫瑰', color: '#9E6060', price: 360,  subtitle: 'Dry Rose' }
+        { id: 'l1', name: '玫瑰裸粉', color: '#C8847A', price: 360, subtitle: 'Rose Nude' },
+        { id: 'l2', name: '豆沙磚紅', color: '#A0514A', price: 360, subtitle: 'Brick Rose' },
+        { id: 'l3', name: '奶茶橘棕', color: '#B8795A', price: 360, subtitle: 'Latte Brown' },
+        { id: 'l4', name: '莓果紫紅', color: '#8B3A52', price: 390, subtitle: 'Berry Mauve' },
+        { id: 'l5', name: '珊瑚橘紅', color: '#C96448', price: 360, subtitle: 'Coral Red' },
+        { id: 'l6', name: '霧感正紅', color: '#B03030', price: 390, subtitle: 'Matte Red' },
+        { id: 'l7', name: '乾燥玫瑰', color: '#9E6060', price: 360, subtitle: 'Dry Rose' }
     ];
 
     var eyeColors = [
-        { id: 'e1', name: '大地棕',   color: '#8B6A5A', price: 550,  subtitle: 'Warm Earth' },
-        { id: 'e2', name: '玫瑰粉棕', color: '#967A7A', price: 550,  subtitle: 'Rose Brown' },
-        { id: 'e3', name: '煙燻灰',   color: '#6A6A7A', price: 580,  subtitle: 'Smoky Gray' },
-        { id: 'e4', name: '奶油可可', color: '#7A5E4E', price: 550,  subtitle: 'Cocoa Cream' },
-        { id: 'e5', name: '香檳金',   color: '#C4A882', price: 620,  subtitle: 'Champagne' },
-        { id: 'e6', name: '焦糖棕',   color: '#A07850', price: 550,  subtitle: 'Caramel' },
-        { id: 'e7', name: '霧感橄欖', color: '#7A7A5A', price: 580,  subtitle: 'Olive Mist' }
+        { id: 'e1', name: '大地棕',   color: '#8B6A5A', price: 550, subtitle: 'Warm Earth' },
+        { id: 'e2', name: '玫瑰粉棕', color: '#967A7A', price: 550, subtitle: 'Rose Brown' },
+        { id: 'e3', name: '煙燻灰',   color: '#6A6A7A', price: 580, subtitle: 'Smoky Gray' },
+        { id: 'e4', name: '奶油可可', color: '#7A5E4E', price: 550, subtitle: 'Cocoa Cream' },
+        { id: 'e5', name: '香檳金',   color: '#C4A882', price: 620, subtitle: 'Champagne' },
+        { id: 'e6', name: '焦糖棕',   color: '#A07850', price: 550, subtitle: 'Caramel' },
+        { id: 'e7', name: '霧感橄欖', color: '#7A7A5A', price: 580, subtitle: 'Olive Mist' }
     ];
 
     var baseColors = [
-        { id: 'b1', name: '瓷白 10',  color: '#F5E8DC', price: 490,  subtitle: 'Porcelain 10' },
-        { id: 'b2', name: '自然 20',  color: '#EDD9C0', price: 490,  subtitle: 'Natural 20' },
-        { id: 'b3', name: '米膚 30',  color: '#E2C9A8', price: 490,  subtitle: 'Warm Beige 30' },
-        { id: 'b4', name: '蜜糖 40',  color: '#D4B48C', price: 490,  subtitle: 'Honey 40' },
-        { id: 'b5', name: '小麥 50',  color: '#C4A070', price: 490,  subtitle: 'Wheat 50' },
-        { id: 'b6', name: '健康 60',  color: '#B08A58', price: 490,  subtitle: 'Bronze 60' }
+        { id: 'b1', name: '瓷白 10',  color: '#F0DFD0', price: 490, subtitle: 'Porcelain 10' },
+        { id: 'b2', name: '自然 20',  color: '#E8D0B8', price: 490, subtitle: 'Natural 20' },
+        { id: 'b3', name: '米膚 30',  color: '#DEC0A0', price: 490, subtitle: 'Warm Beige 30' },
+        { id: 'b4', name: '蜜糖 40',  color: '#D0A880', price: 490, subtitle: 'Honey 40' },
+        { id: 'b5', name: '小麥 50',  color: '#C09060', price: 490, subtitle: 'Wheat 50' },
+        { id: 'b6', name: '健康 60',  color: '#A87848', price: 490, subtitle: 'Bronze 60' }
     ];
 
     var activeLipColor = null; var activeLipId = null;
     var activeEyeColor = null; var activeEyeId = null;
     var activeBaseColor = null; var activeBaseId = null;
 
-    // ── landmark 索引
     var UPPER_LIP = [61,185,40,39,37,0,267,269,270,409,291,308,415,310,311,312,13,82,81,80,191,78];
     var LOWER_LIP = [61,146,91,181,84,17,314,405,321,375,291,308,324,318,402,317,14,87,178,88,95,78];
-    // 臉部輪廓（排除眼睛周圍）
+
+    // 臉部輪廓（內縮版，避免蓋到髮際線）
     var FACE_OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
-    // 左眼、右眼遮罩區域（化妝時底妝不蓋眼窩）
+
+    // 眼周遮罩（底妝時挖掉）
     var LEFT_EYE_REGION  = [226,247,30,29,27,28,56,190,243,133,173,157,158,159,160,161,246,33,7,163,144,145,153,154,155];
     var RIGHT_EYE_REGION = [463,414,286,258,257,259,260,467,446,362,398,384,385,386,387,388,466,263,249,390,373,374,380,381,382];
+
+    // 眉毛區域（眼影範圍）
+    var LEFT_EYE_SHADOW  = [226,247,30,29,27,28,56,190,243,133,173,157,158,159,160,161,246,33,7,163,144,145,153,154,155,70,63,105,66,107,55,193];
+    var RIGHT_EYE_SHADOW = [463,414,286,258,257,259,260,467,446,362,398,384,385,386,387,388,466,263,249,390,373,374,380,381,382,300,293,334,296,336,285,417];
+
+    function hexToRgb(hex) {
+        return {
+            r: parseInt(hex.slice(1,3), 16),
+            g: parseInt(hex.slice(3,5), 16),
+            b: parseInt(hex.slice(5,7), 16)
+        };
+    }
+
+    function tracePath(ctx, points, W, H) {
+        ctx.beginPath();
+        ctx.moveTo(points[0].x * W, points[0].y * H);
+        for (var i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x * W, points[i].y * H);
+        }
+        ctx.closePath();
+    }
 
     function tryExtractJson(text) {
         try { return JSON.parse(text); } catch(e) {
@@ -243,9 +264,7 @@
             var baseList = JSON.stringify(baseColors.map(function(l){ return {id: l.id, name: l.name}; }));
             var systemPrompt = "You are a professional makeup AI. Analyze the user skin tone and face. Pick ONE from each list. Lip list: " + lipList + ". Eye list: " + eyeList + ". Base list: " + baseList + ". Return ONLY JSON with keys: skin_tone, face_shape, recommended_lip_id, recommended_eye_id, recommended_base_id, advice. No markdown, no extra text.";
 
-            var retries = 0;
-            var finalData = null;
-
+            var retries = 0; var finalData = null;
             while (retries < 3 && !finalData) {
                 try {
                     var response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey, {
@@ -261,15 +280,15 @@
                         })
                     });
                     if (!response.ok) {
-                        var errorData = await response.json();
-                        if (response.status === 429 || response.status === 503) { retries++; await new Promise(function(r){ setTimeout(r, 2000 * retries); }); continue; }
+                        var ed = await response.json();
+                        if (response.status === 429 || response.status === 503) { retries++; await new Promise(function(r){ setTimeout(r, 2000*retries); }); continue; }
                         throw new Error("API error " + response.status);
                     }
                     var result = await response.json();
                     var txt = result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
                     if (txt) { finalData = tryExtractJson(txt); if (finalData) break; }
                     retries++;
-                } catch(e) { retries++; await new Promise(function(r){ setTimeout(r, 1000 * retries); }); }
+                } catch(e) { retries++; await new Promise(function(r){ setTimeout(r, 1000*retries); }); }
             }
 
             if (!finalData) throw new Error("解析失敗，請重試");
@@ -282,8 +301,8 @@
             if (!rEye)  rEye  = eyeColors[0];
             if (!rBase) rBase = baseColors[0];
 
-            activeLipColor = rLip.color;   activeLipId  = rLip.id;
-            activeEyeColor = rEye.color;   activeEyeId  = rEye.id;
+            activeLipColor = rLip.color; activeLipId = rLip.id;
+            activeEyeColor = rEye.color; activeEyeId = rEye.id;
             activeBaseColor = rBase.color; activeBaseId = rBase.id;
             refreshAllSwatches();
 
@@ -298,44 +317,14 @@
 
     analyzeBtn.addEventListener('click', performAIAnalysis);
 
-    function setLipColor(item) {
-        if (activeLipId === item.id) { activeLipColor = null; activeLipId = null; }
-        else { activeLipColor = item.color; activeLipId = item.id; }
-        refreshAllSwatches();
-    }
-    function setEyeColor(item) {
-        if (activeEyeId === item.id) { activeEyeColor = null; activeEyeId = null; }
-        else { activeEyeColor = item.color; activeEyeId = item.id; }
-        refreshAllSwatches();
-    }
-    function setBaseColor(item) {
-        if (activeBaseId === item.id) { activeBaseColor = null; activeBaseId = null; }
-        else { activeBaseColor = item.color; activeBaseId = item.id; }
-        refreshAllSwatches();
-    }
+    function setLipColor(item)  { if (activeLipId  === item.id) { activeLipColor  = null; activeLipId  = null; } else { activeLipColor  = item.color; activeLipId  = item.id; } refreshAllSwatches(); }
+    function setEyeColor(item)  { if (activeEyeId  === item.id) { activeEyeColor  = null; activeEyeId  = null; } else { activeEyeColor  = item.color; activeEyeId  = item.id; } refreshAllSwatches(); }
+    function setBaseColor(item) { if (activeBaseId === item.id) { activeBaseColor = null; activeBaseId = null; } else { activeBaseColor = item.color; activeBaseId = item.id; } refreshAllSwatches(); }
 
     function refreshAllSwatches() {
-        document.querySelectorAll('.lip-swatch').forEach(function(el){ el.classList.toggle('active', el.dataset.id === activeLipId); });
-        document.querySelectorAll('.eye-swatch').forEach(function(el){ el.classList.toggle('active', el.dataset.id === activeEyeId); });
+        document.querySelectorAll('.lip-swatch').forEach(function(el){  el.classList.toggle('active', el.dataset.id === activeLipId);  });
+        document.querySelectorAll('.eye-swatch').forEach(function(el){  el.classList.toggle('active', el.dataset.id === activeEyeId);  });
         document.querySelectorAll('.base-swatch').forEach(function(el){ el.classList.toggle('active', el.dataset.id === activeBaseId); });
-    }
-
-    // ── 把 hex 色碼轉成 r,g,b 數字
-    function hexToRgb(hex) {
-        var r = parseInt(hex.slice(1,3), 16);
-        var g = parseInt(hex.slice(3,5), 16);
-        var b = parseInt(hex.slice(5,7), 16);
-        return { r: r, g: g, b: b };
-    }
-
-    // ── 用 landmark 座標畫出遮罩路徑
-    function tracePath(ctx, points, w, h) {
-        ctx.beginPath();
-        ctx.moveTo(points[0].x * w, points[0].y * h);
-        for (var i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x * w, points[i].y * h);
-        }
-        ctx.closePath();
     }
 
     function onResults(results) {
@@ -357,42 +346,35 @@
             var W  = canvasElement.width;
             var H  = canvasElement.height;
 
-            // ── 1. 底妝（最底層，排除眼睛區域）
+            // 渲染順序：底妝 → 眼妝 → 唇妝
             if (activeBaseColor) drawBase(lm, W, H, activeBaseColor);
-
-            // ── 2. 眼妝
             if (activeEyeColor)  drawEye(lm, W, H, activeEyeColor);
-
-            // ── 3. 唇妝（最上層）
             if (activeLipColor)  drawLips(lm, W, H, activeLipColor);
-
-            if (showGuides) drawProportionGuides(lm, W, H);
+            if (showGuides)      drawProportionGuides(lm, W, H);
         }
         canvasCtx.restore();
     }
 
-    // ── 底妝：全臉覆蓋但挖掉眼睛區域，模擬真實粉底
+    // ── 底妝：輕透自然，不蓋臉，僅修飾膚色，邊緣大模糊避免白邊
     function drawBase(lm, W, H, hexColor) {
         var rgb = hexToRgb(hexColor);
 
-        // 建一個離屏 canvas 來做遮罩合成
-        var offscreen = document.createElement('canvas');
-        offscreen.width  = W;
-        offscreen.height = H;
-        var ctx = offscreen.getContext('2d');
+        var off = document.createElement('canvas');
+        off.width = W; off.height = H;
+        var ctx = off.getContext('2d');
 
-        // 畫臉部輪廓填色
+        // 臉部區域填色，邊緣大模糊讓髮際線自然過渡
         ctx.save();
-        ctx.filter = 'blur(8px)';
-        ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ', 0.28)';
+        ctx.filter = 'blur(20px)';  // 大模糊消除邊緣白線
+        ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.18)';
         tracePath(ctx, FACE_OVAL.map(function(i){ return lm[i]; }), W, H);
         ctx.fill();
         ctx.restore();
 
-        // 用 destination-out 把眼睛區域挖掉（模糊邊緣讓過渡自然）
+        // 挖掉眼睛區域，模糊邊緣自然過渡
         ctx.save();
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.filter = 'blur(10px)';
+        ctx.filter = 'blur(12px)';
         ctx.fillStyle = 'rgba(0,0,0,1)';
         tracePath(ctx, LEFT_EYE_REGION.map(function(i){ return lm[i]; }), W, H);
         ctx.fill();
@@ -400,57 +382,67 @@
         ctx.fill();
         ctx.restore();
 
-        // 合回主 canvas（multiply 讓膚色自然融合）
+        // 用 soft-light 混合，膚色跟原本臉色自然融合，不會變白
         canvasCtx.save();
-        canvasCtx.globalCompositeOperation = 'multiply';
-        canvasCtx.globalAlpha = 1;
-        canvasCtx.drawImage(offscreen, 0, 0);
+        canvasCtx.globalCompositeOperation = 'soft-light';
+        canvasCtx.globalAlpha = 0.6;
+        canvasCtx.drawImage(off, 0, 0);
         canvasCtx.restore();
     }
 
-    // ── 眼妝：降低透明度 + 大模糊讓眼影更自然
+    // ── 眼妝：眼影加深，讓效果更明顯
     function drawEye(lm, W, H, hexColor) {
         var rgb = hexToRgb(hexColor);
-        var eyeRegions = [
-            LEFT_EYE_REGION,
-            RIGHT_EYE_REGION
+        var regions = [
+            LEFT_EYE_SHADOW.map(function(i){ return lm[i]; }),
+            RIGHT_EYE_SHADOW.map(function(i){ return lm[i]; })
         ];
-        eyeRegions.forEach(function(region) {
+        regions.forEach(function(pts) {
+            // 第一層：大範圍暈染
             canvasCtx.save();
-            canvasCtx.filter = 'blur(14px)';
+            canvasCtx.filter = 'blur(16px)';
             canvasCtx.globalCompositeOperation = 'multiply';
-            canvasCtx.globalAlpha = 0.32;
+            canvasCtx.globalAlpha = 0.38;
             canvasCtx.fillStyle = 'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
-            tracePath(canvasCtx, region.map(function(i){ return lm[i]; }), W, H);
+            tracePath(canvasCtx, pts, W, H);
+            canvasCtx.fill();
+            canvasCtx.restore();
+            // 第二層：眼頭眼尾集中加深
+            canvasCtx.save();
+            canvasCtx.filter = 'blur(6px)';
+            canvasCtx.globalCompositeOperation = 'multiply';
+            canvasCtx.globalAlpha = 0.28;
+            canvasCtx.fillStyle = 'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
+            tracePath(canvasCtx, pts, W, H);
             canvasCtx.fill();
             canvasCtx.restore();
         });
     }
 
-    // ── 唇妝：深色飽和度高，加強貼合感
+    // ── 唇妝：貼合輪廓 + 柔化邊緣
     function drawLips(lm, W, H, hexColor) {
         var rgb = hexToRgb(hexColor);
-        var lipParts = [
+        var parts = [
             UPPER_LIP.map(function(i){ return lm[i]; }),
             LOWER_LIP.map(function(i){ return lm[i]; })
         ];
-        lipParts.forEach(function(points) {
-            // 第一層：深色底，貼合輪廓
+        parts.forEach(function(pts) {
+            // 第一層：緊貼輪廓
             canvasCtx.save();
-            canvasCtx.filter = 'blur(3px)';
+            canvasCtx.filter = 'blur(2px)';
             canvasCtx.globalCompositeOperation = 'multiply';
-            canvasCtx.globalAlpha = 0.55;
+            canvasCtx.globalAlpha = 0.6;
             canvasCtx.fillStyle = 'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
-            tracePath(canvasCtx, points, W, H);
+            tracePath(canvasCtx, pts, W, H);
             canvasCtx.fill();
             canvasCtx.restore();
-            // 第二層：外擴柔邊，讓顏色更飽滿自然
+            // 第二層：柔化邊緣
             canvasCtx.save();
-            canvasCtx.filter = 'blur(7px)';
+            canvasCtx.filter = 'blur(6px)';
             canvasCtx.globalCompositeOperation = 'multiply';
-            canvasCtx.globalAlpha = 0.25;
+            canvasCtx.globalAlpha = 0.22;
             canvasCtx.fillStyle = 'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
-            tracePath(canvasCtx, points, W, H);
+            tracePath(canvasCtx, pts, W, H);
             canvasCtx.fill();
             canvasCtx.restore();
         });
@@ -597,7 +589,6 @@
         cs.classList.remove('hidden');
         cs.scrollTop = 0;
     }
-
     function hideCartScreen() {
         document.getElementById('cart-screen').classList.add('hidden');
         document.querySelector('.max-w-md.mx-auto.min-h-screen').style.display = 'flex';
